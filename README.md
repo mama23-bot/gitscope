@@ -71,9 +71,8 @@ npm run tauri dev
 
 ### Этот компьютер (GNU-тулчейн)
 
-В окружении без MSVC Build Tools используется GNU-тулчейн. MinGW-утилиты не
-понимают кириллицу в путях, поэтому проект подключается через ASCII-диск `X:`,
-а линкером выступает `rust-lld`.
+В окружении без MSVC Build Tools используется GNU-тулчейн, а линкером
+выступает `rust-lld`.
 
 ```powershell
 winget install BrechtSanders.WinLibs.POSIX.UCRT
@@ -81,8 +80,8 @@ npm install
 npm run tauri:dev
 ```
 
-Скрипт `scripts/dev.ps1` сам настраивает `PATH`, `RUSTUP_TOOLCHAIN`, `RUSTFLAGS`
-и `subst X:`. Для сборки установщика — `npm run tauri:build`.
+Скрипт `scripts/dev.ps1` сам настраивает `PATH`, `RUSTUP_TOOLCHAIN` и
+`RUSTFLAGS`. Для сборки — `npm run tauri:build`.
 
 ### Превью интерфейса в браузере
 

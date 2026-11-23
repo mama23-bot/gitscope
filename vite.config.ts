@@ -14,6 +14,9 @@ export default defineConfig(() => ({
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
+    // Без этого production-бандл получает две копии React,
+    // и хуки падают с "Cannot read properties of null (reading 'useCallback')".
+    dedupe: ["react", "react-dom"],
   },
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
