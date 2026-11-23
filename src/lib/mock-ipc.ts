@@ -235,13 +235,19 @@ export const mockIpc = {
     path: "C:\\demo\\sandbox",
     state: sandboxState,
   }),
-  runSandboxCommand: async (_id: string, command: string): Promise<CommandResult> => ({
+  runSandboxCommand: async (
+    _id: string,
+    command: string,
+    cwd: string,
+  ): Promise<CommandResult> => ({
     command,
     stdout: "Это браузерный мок: команды не выполняются. Запусти приложение через Tauri.\n",
     stderr: "",
     code: 0,
     durationMs: 1,
     state: sandboxState,
+    cwd,
+    clear: false,
   }),
   sandboxState: async (): Promise<RepoState> => sandboxState,
   destroySandbox: async () => {},

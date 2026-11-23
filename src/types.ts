@@ -138,6 +138,8 @@ export interface CommandResult {
   code: number;
   durationMs: number;
   state: RepoState;
+  cwd: string;
+  clear: boolean;
 }
 
 export interface RecentRepo {

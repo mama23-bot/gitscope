@@ -16,6 +16,7 @@ export function useSandbox(scenarioId: string, spec: SandboxSpec) {
   const [sandboxId, setSandboxId] = useState<string | null>(null);
   const [state, setState] = useState<RepoState | null>(null);
   const [entries, setEntries] = useState<TerminalEntry[]>([]);
+  const [cwd, setCwd] = useState("/");
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(false);
   const [resumed, setResumed] = useState(false);
@@ -32,6 +33,7 @@ export function useSandbox(scenarioId: string, spec: SandboxSpec) {
       setSandboxId(info.id);
       setState(info.state);
       setEntries([]);
+      setCwd("/");
       setResumed(false);
     } catch (cause) {
       setError(errorMessage(cause));
@@ -56,6 +58,7 @@ export function useSandbox(scenarioId: string, spec: SandboxSpec) {
       .then((snapshot) => {
         setSandboxId(existing);
         setState(snapshot);
+        setCwd("/");
         setResumed(true);
         setReady(true);
       })
@@ -71,8 +74,15 @@ export function useSandbox(scenarioId: string, spec: SandboxSpec) {
       setBusy(true);
       setError(null);
       try {
-        const result = await ipc.runSandboxCommand(sandboxId, command);
+        const result = await ipc.runSandboxCommand(sandboxId, command, cwd);
         setState(result.state);
+        setCwd(result.cwd);
+
+        if (result.clear) {
+          setEntries([]);
+          return result;
+        }
+
         setEntries((previous) => [
           ...previous,
           {
@@ -104,7 +114,7 @@ export function useSandbox(scenarioId: string, spec: SandboxSpec) {
         setBusy(false);
       }
     },
-    [sandboxId],
+    [sandboxId, cwd],
   );
 
   const reset = useCallback(async () => {
@@ -118,6 +128,7 @@ export function useSandbox(scenarioId: string, spec: SandboxSpec) {
       const info = await ipc.resetSandbox(sandboxId);
       setState(info.state);
       setEntries([]);
+      setCwd("/");
     } catch (cause) {
       setError(errorMessage(cause));
     } finally {
@@ -129,6 +140,7 @@ export function useSandbox(scenarioId: string, spec: SandboxSpec) {
     sandboxId,
     state,
     entries,
+    cwd,
     busy,
     ready,
     resumed,

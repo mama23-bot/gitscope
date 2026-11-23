@@ -8,6 +8,7 @@ use crate::error::{AppError, AppResult};
 use crate::git::policy;
 use crate::git::repo::{self, RepoState};
 use crate::git::runner::{run_git, run_git_ok, run_git_with_env, GitEnv, WRITE_TIMEOUT};
+use crate::git::shell;
 
 fn a(items: &[&str]) -> Vec<String> {
     items.iter().map(|item| item.to_string()).collect()
@@ -86,6 +87,8 @@ pub struct CommandResult {
     pub code: i32,
     pub duration_ms: u64,
     pub state: RepoState,
+    pub cwd: String,
+    pub clear: bool,
 }
 
 fn safe_relative(path: &str) -> AppResult<PathBuf> {
@@ -337,38 +340,98 @@ pub fn tokenize(input: &str) -> AppResult<Vec<String>> {
     Ok(tokens)
 }
 
-pub fn run_command(env: &GitEnv, root: &Path, input: &str) -> AppResult<CommandResult> {
+enum Redirect {
+    None,
+    Truncate(String),
+    Append(String),
+}
+
+fn split_redirect(tokens: &[String]) -> (Vec<String>, Redirect) {
+    for (index, token) in tokens.iter().enumerate() {
+        if token == ">" || token == ">>" {
+            if let Some(target) = tokens.get(index + 1) {
+                let command = tokens[..index].to_vec();
+                let redirect = if token == ">" {
+                    Redirect::Truncate(target.clone())
+                } else {
+                    Redirect::Append(target.clone())
+                };
+                return (command, redirect);
+            }
+        }
+    }
+    (tokens.to_vec(), Redirect::None)
+}
+
+pub fn run_command(
+    env: &GitEnv,
+    root: &Path,
+    cwd: &str,
+    input: &str,
+) -> AppResult<CommandResult> {
     let tokens = tokenize(input)?;
     if tokens.is_empty() {
-        return Err(AppError::invalid("Введи команду, например: git status"));
+        return Err(AppError::invalid("Введи команду, например: git status или ls"));
     }
 
-    if tokens[0] != "git" {
-        return Err(AppError::policy(
-            "В песочнице выполняются только команды git. Начни ввод со слова git.",
-        ));
+    let (command_tokens, redirect) = split_redirect(&tokens);
+    if command_tokens.is_empty() {
+        return Err(AppError::invalid("После > укажи файл"));
     }
 
-    let args = &tokens[1..];
-    if args.is_empty() {
+    let cwd = if cwd.trim().is_empty() { "/" } else { cwd };
+    let workdir = shell::resolve(root, cwd, ".")?;
+    if !workdir.is_dir() {
         return Err(AppError::invalid(
-            "Укажи подкоманду, например: git status или git log --oneline",
+            "Текущая папка не существует. Выполни cd /.",
         ));
     }
-
-    policy::assert_sandbox(args)?;
 
     let started = Instant::now();
-    let output = run_git(env, root, args, WRITE_TIMEOUT)?;
+
+    let output = if command_tokens[0] == "git" {
+        let args = &command_tokens[1..];
+        if args.is_empty() {
+            return Err(AppError::invalid(
+                "Укажи подкоманду, например: git status или git log --oneline",
+            ));
+        }
+        policy::assert_sandbox(args)?;
+        let git_output = run_git(env, &workdir, args, WRITE_TIMEOUT)?;
+        shell::ShellOutput {
+            stdout: git_output.stdout,
+            stderr: git_output.stderr,
+            code: git_output.code,
+            cwd: cwd.to_string(),
+            clear: false,
+        }
+    } else {
+        shell::run_builtin(root, cwd, &command_tokens)?
+    };
+
+    let stdout = match redirect {
+        Redirect::None => output.stdout,
+        Redirect::Truncate(target) => {
+            shell::redirect_to_file(root, cwd, &output.stdout, &target, false)?;
+            String::new()
+        }
+        Redirect::Append(target) => {
+            shell::redirect_to_file(root, cwd, &output.stdout, &target, true)?;
+            String::new()
+        }
+    };
+
     let state = repo::repo_state(env, root)?;
 
     Ok(CommandResult {
         command: input.trim().to_string(),
-        stdout: output.stdout,
+        stdout,
         stderr: output.stderr,
         code: output.code,
         duration_ms: started.elapsed().as_millis() as u64,
         state,
+        cwd: output.cwd,
+        clear: output.clear,
     })
 }
 

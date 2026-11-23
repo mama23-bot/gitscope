@@ -23,6 +23,7 @@ function friendlyHint(stderr: string): string | null {
 export function Terminal({
   entries,
   busy,
+  cwd,
   onRun,
   onReset,
   draft,
@@ -31,6 +32,7 @@ export function Terminal({
 }: {
   entries: TerminalEntry[];
   busy: boolean;
+  cwd: string;
   onRun: (command: string) => Promise<unknown>;
   onReset: () => void;
   draft?: string | null;
@@ -96,17 +98,20 @@ export function Terminal({
       <div className="flex h-9 shrink-0 items-center justify-between border-b border-line px-3">
         <div className="flex items-center gap-2 text-[11px] font-medium text-fg-muted">
           <TerminalSquare className="size-3.5 text-fg-faint" />
-          Терминал песочницы
+          Терминал · Linux-style
         </div>
-        <Button
-          size="sm"
-          variant="ghost"
-          icon={<RotateCcw className="size-3.5" />}
-          onClick={onReset}
-          disabled={busy}
-        >
-          Сбросить
-        </Button>
+        <div className="flex items-center gap-2">
+          <span className="mono text-[10px] text-fg-faint">{cwd}</span>
+          <Button
+            size="sm"
+            variant="ghost"
+            icon={<RotateCcw className="size-3.5" />}
+            onClick={onReset}
+            disabled={busy}
+          >
+            Сбросить
+          </Button>
+        </div>
       </div>
 
       <div
@@ -115,8 +120,10 @@ export function Terminal({
       >
         {entries.length === 0 ? (
           <div className="text-fg-faint">
-            Введи команду, например <span className="text-fg-muted">git status</span>.
-            История команд — стрелки вверх и вниз.
+            Введи команду: <span className="text-fg-muted">git status</span>,{" "}
+            <span className="text-fg-muted">ls</span>,{" "}
+            <span className="text-fg-muted">cat README.md</span>. Список команд —{" "}
+            <span className="text-fg-muted">help</span>.
           </div>
         ) : null}
 
@@ -149,13 +156,14 @@ export function Terminal({
       </div>
 
       <div className="flex shrink-0 items-center gap-2 border-t border-line px-3 py-2">
-        <span className="mono select-none text-xs text-accent">$</span>
+        <span className="mono select-none text-xs text-accent">{cwd}</span>
+        <span className="mono select-none text-xs text-fg-faint">$</span>
         <input
           ref={inputRef}
           value={value}
           onChange={(event) => setValue(event.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="git status"
+          placeholder="git status, ls, cat README.md…"
           spellCheck={false}
           autoComplete="off"
           className="mono min-w-0 flex-1 bg-transparent text-xs text-fg placeholder:text-fg-faint focus:outline-none"

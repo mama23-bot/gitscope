@@ -269,6 +269,7 @@ export function LessonRunner({ lesson }: { lesson: Lesson }) {
             <Terminal
               entries={sandbox.entries}
               busy={sandbox.busy}
+              cwd={sandbox.cwd}
               onRun={handleRun}
               onReset={handleReset}
               draft={draft}

@@ -56,6 +56,7 @@ export function PlaygroundPage() {
           <Terminal
             entries={sandbox.entries}
             busy={sandbox.busy}
+            cwd={sandbox.cwd}
             onRun={sandbox.run}
             onReset={sandbox.reset}
             draft={draft}
@@ -81,6 +82,9 @@ export function PlaygroundPage() {
             </div>
             <div className="mt-2 flex flex-wrap gap-1">
               {[
+                "help",
+                "ls -l",
+                "cat README.md",
                 "git status",
                 "git log --oneline --graph --all",
                 "git switch -c feature",

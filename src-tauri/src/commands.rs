@@ -200,6 +200,7 @@ pub async fn run_sandbox_command(
     state: State<'_, AppState>,
     id: String,
     command: String,
+    cwd: Option<String>,
 ) -> AppResult<CommandResult> {
     let env = state.git_env();
     let record = {
@@ -215,7 +216,7 @@ pub async fn run_sandbox_command(
         ));
     }
 
-    sandbox::run_command(&env, &root, &command)
+    sandbox::run_command(&env, &root, cwd.as_deref().unwrap_or("/"), &command)
 }
 
 #[tauri::command]

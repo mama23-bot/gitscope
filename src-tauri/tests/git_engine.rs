@@ -84,13 +84,25 @@ fn reads_history_and_runs_sandbox() {
     assert!(state.status.iter().any(|entry| entry.path == "draft.txt"));
 
     let result =
-        sandbox::run_command(&env, &sandbox_dir, "git switch feature").expect("switch branch");
+        sandbox::run_command(&env, &sandbox_dir, "/", "git switch feature").expect("switch branch");
     assert_eq!(result.code, 0);
     assert_eq!(result.state.head_branch.as_deref(), Some("feature"));
 
-    let blocked = sandbox::run_command(&env, &sandbox_dir, "git push");
+    let blocked = sandbox::run_command(&env, &sandbox_dir, "/", "git push");
     assert!(blocked.is_err(), "network commands must be blocked");
 
-    let escape = sandbox::run_command(&env, &sandbox_dir, "git log -C ..");
+    let escape = sandbox::run_command(&env, &sandbox_dir, "/", "git log -C ..");
     assert!(escape.is_err(), "path escape must be blocked");
+
+    let shell = sandbox::run_command(&env, &sandbox_dir, "/", "mkdir src").expect("mkdir");
+    assert_eq!(shell.code, 0);
+    let shell = sandbox::run_command(&env, &sandbox_dir, "/", "cd src").expect("cd");
+    assert_eq!(shell.cwd, "/src");
+    let shell = sandbox::run_command(&env, &sandbox_dir, "/src", "echo hello > note.txt")
+        .expect("echo redirect");
+    assert_eq!(shell.code, 0);
+    let shell = sandbox::run_command(&env, &sandbox_dir, "/src", "cat note.txt").expect("cat");
+    assert_eq!(shell.stdout, "hello\n");
+    let escape = sandbox::run_command(&env, &sandbox_dir, "/", "cd ../../..").expect("cd clamp");
+    assert_eq!(escape.cwd, "/");
 }
