@@ -13,6 +13,7 @@ import type {
   RepoStatus,
   SandboxInfo,
   SandboxSpec,
+  ShellMode,
 } from "@/types";
 
 const now = Math.floor(Date.now() / 1000);
@@ -194,6 +195,7 @@ export const mockIpc = {
     dataDir: "C:\\demo\\GitScope",
     gitVersion: "git version 2.56.1 (browser mock)",
     platform: "browser",
+    bashAvailable: true,
   }),
 
   openRepo: async (path: string): Promise<RepoInfo> => ({ ...repo, path }),
@@ -239,6 +241,7 @@ export const mockIpc = {
     _id: string,
     command: string,
     cwd: string,
+    _mode: ShellMode,
   ): Promise<CommandResult> => ({
     command,
     stdout: "Это браузерный мок: команды не выполняются. Запусти приложение через Tauri.\n",

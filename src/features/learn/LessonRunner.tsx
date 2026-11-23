@@ -109,7 +109,7 @@ function StepCard({
 }
 
 export function LessonRunner({ lesson }: { lesson: Lesson }) {
-  const sandbox = useSandbox(lesson.id, lesson.spec);
+  const sandbox = useSandbox(lesson.id, lesson.spec, "safe");
   const [stepIndex, setStepIndex] = useState(0);
   const [completed, setCompleted] = useState<string[]>([]);
   const [xp, setXp] = useState(0);
@@ -270,6 +270,7 @@ export function LessonRunner({ lesson }: { lesson: Lesson }) {
               entries={sandbox.entries}
               busy={sandbox.busy}
               cwd={sandbox.cwd}
+              mode="safe"
               onRun={handleRun}
               onReset={handleReset}
               draft={draft}

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { errorMessage, ipc } from "@/lib/ipc";
-import type { CommandResult, RepoState, SandboxSpec } from "@/types";
+import type { CommandResult, RepoState, SandboxSpec, ShellMode } from "@/types";
 
 export interface TerminalEntry {
   id: number;
@@ -11,7 +11,11 @@ export interface TerminalEntry {
   durationMs: number;
 }
 
-export function useSandbox(scenarioId: string, spec: SandboxSpec) {
+export function useSandbox(
+  scenarioId: string,
+  spec: SandboxSpec,
+  mode: ShellMode = "safe",
+) {
   const storageKey = `gitscope:sandbox:${scenarioId}`;
   const [sandboxId, setSandboxId] = useState<string | null>(null);
   const [state, setState] = useState<RepoState | null>(null);
@@ -23,6 +27,14 @@ export function useSandbox(scenarioId: string, spec: SandboxSpec) {
   const [error, setError] = useState<string | null>(null);
   const counter = useRef(0);
   const started = useRef(false);
+  const previousMode = useRef(mode);
+
+  useEffect(() => {
+    if (previousMode.current === mode) return;
+    previousMode.current = mode;
+    setCwd("/");
+    setEntries([]);
+  }, [mode]);
 
   const create = useCallback(async () => {
     setBusy(true);
@@ -74,7 +86,7 @@ export function useSandbox(scenarioId: string, spec: SandboxSpec) {
       setBusy(true);
       setError(null);
       try {
-        const result = await ipc.runSandboxCommand(sandboxId, command, cwd);
+        const result = await ipc.runSandboxCommand(sandboxId, command, cwd, mode);
         setState(result.state);
         setCwd(result.cwd);
 
@@ -114,7 +126,7 @@ export function useSandbox(scenarioId: string, spec: SandboxSpec) {
         setBusy(false);
       }
     },
-    [sandboxId, cwd],
+    [sandboxId, cwd, mode],
   );
 
   const reset = useCallback(async () => {

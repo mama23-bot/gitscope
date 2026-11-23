@@ -2,6 +2,7 @@ import { CornerDownLeft, RotateCcw, TerminalSquare } from "lucide-react";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Button, Kbd } from "@/components/ui";
 import { cn } from "@/lib/cn";
+import type { ShellMode } from "@/types";
 import type { TerminalEntry } from "./useSandbox";
 
 function friendlyHint(stderr: string): string | null {
@@ -24,6 +25,7 @@ export function Terminal({
   entries,
   busy,
   cwd,
+  mode,
   onRun,
   onReset,
   draft,
@@ -33,6 +35,7 @@ export function Terminal({
   entries: TerminalEntry[];
   busy: boolean;
   cwd: string;
+  mode: ShellMode;
   onRun: (command: string) => Promise<unknown>;
   onReset: () => void;
   draft?: string | null;
@@ -98,9 +101,14 @@ export function Terminal({
       <div className="flex h-9 shrink-0 items-center justify-between border-b border-line px-3">
         <div className="flex items-center gap-2 text-[11px] font-medium text-fg-muted">
           <TerminalSquare className="size-3.5 text-fg-faint" />
-          Терминал · Linux-style
+          Терминал · {mode === "full" ? "Linux (Git Bash)" : "safe shell"}
         </div>
         <div className="flex items-center gap-2">
+          {mode === "full" ? (
+            <span className="text-[10px] text-warning">полный доступ</span>
+          ) : (
+            <span className="text-[10px] text-success">только песочница</span>
+          )}
           <span className="mono text-[10px] text-fg-faint">{cwd}</span>
           <Button
             size="sm"

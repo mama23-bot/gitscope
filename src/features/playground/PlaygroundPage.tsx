@@ -1,7 +1,10 @@
+import { useQuery } from "@tanstack/react-query";
 import { TerminalSquare } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui";
-import type { SandboxSpec } from "@/types";
+import { cn } from "@/lib/cn";
+import { ipc } from "@/lib/ipc";
+import type { SandboxSpec, ShellMode } from "@/types";
 import { MiniGraph } from "./MiniGraph";
 import { Terminal } from "./Terminal";
 import { useSandbox } from "./useSandbox";
@@ -33,8 +36,18 @@ const playgroundSpec: SandboxSpec = {
 };
 
 export function PlaygroundPage() {
-  const sandbox = useSandbox("playground", playgroundSpec);
+  const [mode, setMode] = useState<ShellMode>("full");
   const [draft, setDraft] = useState<string | null>(null);
+  const sandbox = useSandbox("playground", playgroundSpec, mode);
+
+  const appInfo = useQuery({ queryKey: ["appInfo"], queryFn: ipc.appInfo });
+  const bashAvailable = appInfo.data?.bashAvailable ?? true;
+
+  useEffect(() => {
+    if (appInfo.data && !appInfo.data.bashAvailable) {
+      setMode("safe");
+    }
+  }, [appInfo.data]);
 
   return (
     <div className="flex h-full flex-col">
@@ -43,11 +56,43 @@ export function PlaygroundPage() {
         <div className="min-w-0">
           <div className="text-sm font-semibold text-fg">Playground</div>
           <div className="text-[11px] text-fg-faint">
-            Свободная песочница: настоящий git в отдельном репозитории
+            Свободная песочница: настоящий git и Linux-терминал
           </div>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <Badge tone="success">safe mode</Badge>
+          <div className="flex rounded-md border border-line bg-canvas p-0.5">
+            <button
+              type="button"
+              onClick={() => setMode("full")}
+              disabled={!bashAvailable}
+              className={cn(
+                "rounded px-2 py-1 text-[11px] transition-colors",
+                mode === "full"
+                  ? "bg-accent-soft text-fg"
+                  : "text-fg-muted hover:text-fg",
+                !bashAvailable && "cursor-not-allowed opacity-40",
+              )}
+            >
+              Linux (Git Bash)
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("safe")}
+              className={cn(
+                "rounded px-2 py-1 text-[11px] transition-colors",
+                mode === "safe"
+                  ? "bg-accent-soft text-fg"
+                  : "text-fg-muted hover:text-fg",
+              )}
+            >
+              Безопасный
+            </button>
+          </div>
+          {mode === "full" ? (
+            <Badge tone="warning">полный доступ</Badge>
+          ) : (
+            <Badge tone="success">safe mode</Badge>
+          )}
         </div>
       </header>
 
@@ -57,6 +102,7 @@ export function PlaygroundPage() {
             entries={sandbox.entries}
             busy={sandbox.busy}
             cwd={sandbox.cwd}
+            mode={mode}
             onRun={sandbox.run}
             onReset={sandbox.reset}
             draft={draft}

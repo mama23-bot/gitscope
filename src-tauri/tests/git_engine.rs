@@ -3,7 +3,8 @@ use std::process::Command;
 
 use gitscope_lib::git::repo;
 use gitscope_lib::git::runner::GitEnv;
-use gitscope_lib::git::sandbox::{self, SandboxSpec};
+use gitscope_lib::git::sandbox::{self, SandboxSpec, ShellMode};
+use gitscope_lib::git::shell::find_bash;
 
 fn temp_dir(name: &str) -> PathBuf {
     let dir = std::env::temp_dir().join(format!(
@@ -83,26 +84,61 @@ fn reads_history_and_runs_sandbox() {
     assert!(state.files.contains(&"app.js".to_string()));
     assert!(state.status.iter().any(|entry| entry.path == "draft.txt"));
 
-    let result =
-        sandbox::run_command(&env, &sandbox_dir, "/", "git switch feature").expect("switch branch");
+    let result = sandbox::run_command(
+        &env,
+        &sandbox_dir,
+        "/",
+        "git switch feature",
+        ShellMode::Safe,
+    )
+    .expect("switch branch");
     assert_eq!(result.code, 0);
     assert_eq!(result.state.head_branch.as_deref(), Some("feature"));
 
-    let blocked = sandbox::run_command(&env, &sandbox_dir, "/", "git push");
+    let blocked = sandbox::run_command(&env, &sandbox_dir, "/", "git push", ShellMode::Safe);
     assert!(blocked.is_err(), "network commands must be blocked");
 
-    let escape = sandbox::run_command(&env, &sandbox_dir, "/", "git log -C ..");
+    let escape = sandbox::run_command(&env, &sandbox_dir, "/", "git log -C ..", ShellMode::Safe);
     assert!(escape.is_err(), "path escape must be blocked");
 
-    let shell = sandbox::run_command(&env, &sandbox_dir, "/", "mkdir src").expect("mkdir");
+    let shell = sandbox::run_command(&env, &sandbox_dir, "/", "mkdir src", ShellMode::Safe)
+        .expect("mkdir");
     assert_eq!(shell.code, 0);
-    let shell = sandbox::run_command(&env, &sandbox_dir, "/", "cd src").expect("cd");
+    let shell = sandbox::run_command(&env, &sandbox_dir, "/", "cd src", ShellMode::Safe)
+        .expect("cd");
     assert_eq!(shell.cwd, "/src");
-    let shell = sandbox::run_command(&env, &sandbox_dir, "/src", "echo hello > note.txt")
-        .expect("echo redirect");
+    let shell = sandbox::run_command(
+        &env,
+        &sandbox_dir,
+        "/src",
+        "echo hello > note.txt",
+        ShellMode::Safe,
+    )
+    .expect("echo redirect");
     assert_eq!(shell.code, 0);
-    let shell = sandbox::run_command(&env, &sandbox_dir, "/src", "cat note.txt").expect("cat");
+    let shell = sandbox::run_command(
+        &env,
+        &sandbox_dir,
+        "/src",
+        "cat note.txt",
+        ShellMode::Safe,
+    )
+    .expect("cat");
     assert_eq!(shell.stdout, "hello\n");
-    let escape = sandbox::run_command(&env, &sandbox_dir, "/", "cd ../../..").expect("cd clamp");
+    let escape = sandbox::run_command(&env, &sandbox_dir, "/", "cd ../../..", ShellMode::Safe)
+        .expect("cd clamp");
     assert_eq!(escape.cwd, "/");
+
+    if find_bash().is_some() {
+        let full = sandbox::run_command(
+            &env,
+            &sandbox_dir,
+            "/",
+            "echo linux | tr a-z A-Z",
+            ShellMode::Full,
+        )
+        .expect("full shell");
+        assert_eq!(full.stdout, "LINUX");
+        assert_eq!(full.cwd, "/");
+    }
 }

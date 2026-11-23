@@ -346,6 +346,22 @@ enum Redirect {
     Append(String),
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ShellMode {
+    Safe,
+    Full,
+}
+
+impl ShellMode {
+    pub fn parse(value: &str) -> Self {
+        if value == "full" {
+            Self::Full
+        } else {
+            Self::Safe
+        }
+    }
+}
+
 fn split_redirect(tokens: &[String]) -> (Vec<String>, Redirect) {
     for (index, token) in tokens.iter().enumerate() {
         if token == ">" || token == ">>" {
@@ -368,6 +384,7 @@ pub fn run_command(
     root: &Path,
     cwd: &str,
     input: &str,
+    mode: ShellMode,
 ) -> AppResult<CommandResult> {
     let tokens = tokenize(input)?;
     if tokens.is_empty() {
@@ -380,16 +397,29 @@ pub fn run_command(
     }
 
     let cwd = if cwd.trim().is_empty() { "/" } else { cwd };
-    let workdir = shell::resolve(root, cwd, ".")?;
-    if !workdir.is_dir() {
-        return Err(AppError::invalid(
-            "Текущая папка не существует. Выполни cd /.",
-        ));
+
+    if mode == ShellMode::Safe && !cwd.starts_with('@') {
+        let workdir = shell::resolve(root, cwd, ".")?;
+        if !workdir.is_dir() {
+            return Err(AppError::invalid(
+                "Текущая папка не существует. Выполни cd /.",
+            ));
+        }
     }
 
     let started = Instant::now();
 
-    let output = if command_tokens[0] == "git" {
+    let (output, apply_redirect) = if mode == ShellMode::Full {
+        if command_tokens[0] == "git" {
+            if command_tokens.len() < 2 {
+                return Err(AppError::invalid(
+                    "Укажи подкоманду, например: git status или git log --oneline",
+                ));
+            }
+            policy::assert_sandbox(&command_tokens[1..])?;
+        }
+        (shell::run_full(env, root, cwd, input)?, false)
+    } else if command_tokens[0] == "git" {
         let args = &command_tokens[1..];
         if args.is_empty() {
             return Err(AppError::invalid(
@@ -397,28 +427,36 @@ pub fn run_command(
             ));
         }
         policy::assert_sandbox(args)?;
+        let workdir = shell::resolve(root, cwd, ".")?;
         let git_output = run_git(env, &workdir, args, WRITE_TIMEOUT)?;
-        shell::ShellOutput {
-            stdout: git_output.stdout,
-            stderr: git_output.stderr,
-            code: git_output.code,
-            cwd: cwd.to_string(),
-            clear: false,
-        }
+        (
+            shell::ShellOutput {
+                stdout: git_output.stdout,
+                stderr: git_output.stderr,
+                code: git_output.code,
+                cwd: cwd.to_string(),
+                clear: false,
+            },
+            true,
+        )
     } else {
-        shell::run_builtin(root, cwd, &command_tokens)?
+        (shell::run_builtin(root, cwd, &command_tokens)?, true)
     };
 
-    let stdout = match redirect {
-        Redirect::None => output.stdout,
-        Redirect::Truncate(target) => {
-            shell::redirect_to_file(root, cwd, &output.stdout, &target, false)?;
-            String::new()
+    let stdout = if apply_redirect {
+        match redirect {
+            Redirect::None => output.stdout,
+            Redirect::Truncate(target) => {
+                shell::redirect_to_file(root, cwd, &output.stdout, &target, false)?;
+                String::new()
+            }
+            Redirect::Append(target) => {
+                shell::redirect_to_file(root, cwd, &output.stdout, &target, true)?;
+                String::new()
+            }
         }
-        Redirect::Append(target) => {
-            shell::redirect_to_file(root, cwd, &output.stdout, &target, true)?;
-            String::new()
-        }
+    } else {
+        output.stdout
     };
 
     let state = repo::repo_state(env, root)?;

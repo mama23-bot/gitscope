@@ -1,8 +1,10 @@
 use std::fs;
 use std::io::Write;
 use std::path::{Component, Path, PathBuf};
+use std::process::{Command, Stdio};
 
 use crate::error::{AppError, AppResult};
+use crate::git::runner::GitEnv;
 
 /// Результат выполнения встроенной команды.
 #[derive(Debug, Clone)]
@@ -636,6 +638,157 @@ pub fn redirect_to_file(
             .map_err(|error| AppError::invalid(format!("{target}: {error}")))?;
     }
     Ok(())
+}
+
+/// Ищет Git Bash из Git for Windows.
+pub fn find_bash() -> Option<PathBuf> {
+    let candidates = [
+        std::env::var("ProgramFiles")
+            .ok()
+            .map(|path| PathBuf::from(path).join("Git").join("bin").join("bash.exe")),
+        std::env::var("ProgramFiles(x86)")
+            .ok()
+            .map(|path| PathBuf::from(path).join("Git").join("bin").join("bash.exe")),
+        std::env::var("LOCALAPPDATA")
+            .ok()
+            .map(|path| {
+                PathBuf::from(path)
+                    .join("Programs")
+                    .join("Git")
+                    .join("bin")
+                    .join("bash.exe")
+            }),
+    ];
+
+    for candidate in candidates.into_iter().flatten() {
+        if candidate.exists() {
+            return Some(candidate);
+        }
+    }
+
+    if Command::new("bash")
+        .arg("--version")
+        .stdin(Stdio::null())
+        .output()
+        .map(|output| output.status.success())
+        .unwrap_or(false)
+    {
+        return Some(PathBuf::from("bash"));
+    }
+
+    None
+}
+
+fn to_msys(path: &Path) -> String {
+    let text = path.to_string_lossy().replace('\\', "/");
+    let bytes = text.as_bytes();
+    if bytes.len() >= 2 && bytes[1] == b':' {
+        let drive = text[..1].to_lowercase();
+        format!("/{drive}{}", &text[2..])
+    } else {
+        text
+    }
+}
+
+fn shell_quote(value: &str) -> String {
+    format!("'{}'", value.replace('\'', "'\\''"))
+}
+
+/// Полный POSIX-shell через Git Bash: доступны все команды MSYS2,
+/// включая pipes, sed, awk, grep, tar, curl и т.д.
+pub fn run_full(env: &GitEnv, root: &Path, cwd: &str, input: &str) -> AppResult<ShellOutput> {
+    if input.trim() == "clear" {
+        return Ok(ShellOutput {
+            stdout: String::new(),
+            stderr: String::new(),
+            code: 0,
+            cwd: cwd.to_string(),
+            clear: true,
+        });
+    }
+
+    let bash = find_bash().ok_or_else(|| {
+        AppError::new(
+            "bashMissing",
+            "Git Bash не найден. Установи Git for Windows, чтобы включить полный Linux-терминал.",
+        )
+    })?;
+
+    let root_msys = to_msys(root);
+    let workdir = if let Some(external) = cwd.strip_prefix('@') {
+        external.to_string()
+    } else if cwd == "/" || cwd.is_empty() {
+        root_msys.clone()
+    } else {
+        format!("{root_msys}{cwd}")
+    };
+
+    let marker = format!(
+        "__GITSCOPE_PWD_{}_{}__",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|duration| duration.as_nanos())
+            .unwrap_or(0)
+    );
+
+    let script = format!(
+        "cd {workdir} 2>/dev/null || cd {root}\n{input}\n__gitscope_status=$?\nprintf '\\n{marker}%s\\n' \"$PWD\"\nexit $__gitscope_status",
+        workdir = shell_quote(&workdir),
+        root = shell_quote(&root_msys),
+        input = input,
+        marker = marker,
+    );
+
+    let output = Command::new(&bash)
+        .arg("--noprofile")
+        .arg("--norc")
+        .arg("-c")
+        .arg(&script)
+        .current_dir(root)
+        .env("HOME", root)
+        .env("TERM", "dumb")
+        .env("GIT_TERMINAL_PROMPT", "0")
+        .env("GIT_PAGER", "cat")
+        .env("PAGER", "cat")
+        .env("GIT_CONFIG_NOSYSTEM", "1")
+        .env("GIT_CONFIG_GLOBAL", &env.config_global)
+        .env("LANG", "en_US.UTF-8")
+        .stdin(Stdio::null())
+        .output()
+        .map_err(|error| AppError::io(format!("Не удалось запустить Git Bash: {error}")))?;
+
+    let mut stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+    let code = output.status.code().unwrap_or(1);
+
+    let mut new_cwd = cwd.to_string();
+    if let Some(index) = stdout.rfind(&marker) {
+        let pwd = stdout[index + marker.len()..].trim().replace('\\', "/");
+        stdout.truncate(index);
+        stdout = stdout
+            .trim_end_matches(|character| character == '\r' || character == '\n')
+            .to_string();
+
+        new_cwd = if let Some(relative) = pwd.strip_prefix(&root_msys) {
+            let relative = relative.trim_start_matches('/');
+            if relative.is_empty() {
+                "/".to_string()
+            } else {
+                format!("/{relative}")
+            }
+        } else {
+            format!("@{pwd}")
+        };
+    }
+
+    Ok(ShellOutput {
+        stdout,
+        stderr,
+        code,
+        cwd: new_cwd,
+        clear: false,
+    })
 }
 
 #[cfg(test)]

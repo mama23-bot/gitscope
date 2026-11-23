@@ -13,6 +13,7 @@ use crate::git::repo::{
 };
 use crate::git::runner::{self, GitEnv};
 use crate::git::sandbox::{self, CommandResult, SandboxSpec};
+use crate::git::shell;
 
 pub struct AppState {
     pub db: Mutex<Connection>,
@@ -59,6 +60,7 @@ pub struct AppInfo {
     pub data_dir: String,
     pub git_version: String,
     pub platform: String,
+    pub bash_available: bool,
 }
 
 #[tauri::command]
@@ -73,6 +75,7 @@ pub async fn app_info(state: State<'_, AppState>) -> AppResult<AppInfo> {
         data_dir: state.data_dir.display().to_string(),
         git_version: runner::git_version().unwrap_or_else(|_| "не найден".to_string()),
         platform: std::env::consts::OS.to_string(),
+        bash_available: shell::find_bash().is_some(),
     })
 }
 
@@ -201,6 +204,7 @@ pub async fn run_sandbox_command(
     id: String,
     command: String,
     cwd: Option<String>,
+    mode: Option<String>,
 ) -> AppResult<CommandResult> {
     let env = state.git_env();
     let record = {
@@ -216,7 +220,13 @@ pub async fn run_sandbox_command(
         ));
     }
 
-    sandbox::run_command(&env, &root, cwd.as_deref().unwrap_or("/"), &command)
+    sandbox::run_command(
+        &env,
+        &root,
+        cwd.as_deref().unwrap_or("/"),
+        &command,
+        sandbox::ShellMode::parse(mode.as_deref().unwrap_or("safe")),
+    )
 }
 
 #[tauri::command]

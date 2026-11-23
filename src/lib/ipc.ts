@@ -14,6 +14,7 @@ import type {
   RepoStatus,
   SandboxInfo,
   SandboxSpec,
+  ShellMode,
 } from "@/types";
 
 const realIpc = {
@@ -36,8 +37,8 @@ const realIpc = {
   createSandbox: (scenarioId: string, spec: SandboxSpec) =>
     invoke<SandboxInfo>("create_sandbox", { scenarioId, spec }),
   resetSandbox: (id: string) => invoke<SandboxInfo>("reset_sandbox", { id }),
-  runSandboxCommand: (id: string, command: string, cwd: string) =>
-    invoke<CommandResult>("run_sandbox_command", { id, command, cwd }),
+  runSandboxCommand: (id: string, command: string, cwd: string, mode: ShellMode) =>
+    invoke<CommandResult>("run_sandbox_command", { id, command, cwd, mode }),
   sandboxState: (id: string) => invoke<RepoState>("sandbox_state", { id }),
   destroySandbox: (id: string) => invoke<void>("destroy_sandbox", { id }),
 

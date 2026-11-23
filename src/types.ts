@@ -162,7 +162,10 @@ export interface AppInfo {
   dataDir: string;
   gitVersion: string;
   platform: string;
+  bashAvailable: boolean;
 }
+
+export type ShellMode = "safe" | "full";
 
 export interface FileSpec {
   path: string;

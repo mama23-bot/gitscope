@@ -58,6 +58,10 @@ export function SettingsPage() {
 
             <Card icon={<GitBranch className="size-4" />} title="Git">
               <Row label="Версия" value={info.data.gitVersion} />
+              <Row
+                label="Linux-терминал"
+                value={info.data.bashAvailable ? "Git Bash доступен" : "недоступен"}
+              />
               <p className="text-[11px] leading-relaxed text-fg-faint">
                 GitScope использует системный git. Если команда не найдена,
                 установи Git for Windows и перезапусти приложение.
