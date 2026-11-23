@@ -5,6 +5,7 @@ import { Button, EmptyState, ErrorBanner, Spinner } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { formatNumber } from "@/lib/format";
 import { errorMessage, ipc } from "@/lib/ipc";
+import { useDebouncedValue } from "@/lib/useDebouncedValue";
 import { useGraphLayout } from "@/lib/useGraphLayout";
 import { filterCommits } from "@/lib/validators";
 import type { RepoInfo } from "@/types";
@@ -49,9 +50,16 @@ export function RepoExplorer({ repo }: { repo: RepoInfo }) {
     [refs],
   );
 
+  const debouncedSearch = useDebouncedValue(filters.search, 250);
+
   const filtered = useMemo(
-    () => filterCommits(commits, filters),
-    [commits, filters],
+    () =>
+      filterCommits(commits, {
+        search: debouncedSearch,
+        author: filters.author,
+        branch: filters.branch,
+      }),
+    [commits, debouncedSearch, filters.author, filters.branch],
   );
 
   const layout = useGraphLayout(filtered);

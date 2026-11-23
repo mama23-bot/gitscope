@@ -320,30 +320,7 @@ pub fn open_repo(env: &GitEnv, path: &str) -> AppResult<RepoInfo> {
     })
 }
 
-pub fn list_commits(env: &GitEnv, path: &Path, limit: Option<usize>) -> AppResult<Vec<Commit>> {
-    let head = run_readonly_raw(env, path, &a(&["rev-parse", "--verify", "--quiet", "HEAD"]))?;
-    if !head.success() {
-        return Ok(Vec::new());
-    }
-
-    let limit = limit.unwrap_or(LOG_LIMIT).min(LOG_LIMIT);
-    let format = "%H%x1f%P%x1f%an%x1f%ae%x1f%at%x1f%cn%x1f%ct%x1f%s%x1e";
-    let raw = run_readonly(
-        env,
-        path,
-        &[
-            "log".to_string(),
-            "--all".to_string(),
-            "HEAD".to_string(),
-            "--date-order".to_string(),
-            format!("--max-count={limit}"),
-            format!("--format={format}"),
-        ],
-    )?;
-
-    let refs = list_refs(env, path).unwrap_or_default();
-    let labels = refs_by_sha(&refs);
-
+fn parse_commit_records(raw: &str, labels: &HashMap<String, Vec<RefLabel>>) -> Vec<Commit> {
     let mut commits = Vec::new();
     for record in raw.split('\x1e') {
         let record = record.trim_start_matches('\n');
@@ -371,8 +348,48 @@ pub fn list_commits(env: &GitEnv, path: &Path, limit: Option<usize>) -> AppResul
             sha,
         });
     }
+    commits
+}
 
-    Ok(commits)
+/// Версия list_commits с уже загруженными refs: экономит один вызов git.
+fn list_commits_with_refs(
+    env: &GitEnv,
+    path: &Path,
+    limit: Option<usize>,
+    refs: &[RefInfo],
+    head_available: bool,
+) -> AppResult<Vec<Commit>> {
+    if !head_available {
+        return Ok(Vec::new());
+    }
+
+    let limit = limit.unwrap_or(LOG_LIMIT).min(LOG_LIMIT);
+    let format = "%H%x1f%P%x1f%an%x1f%ae%x1f%at%x1f%cn%x1f%ct%x1f%s%x1e";
+    let raw = run_readonly(
+        env,
+        path,
+        &[
+            "log".to_string(),
+            "--all".to_string(),
+            "HEAD".to_string(),
+            "--date-order".to_string(),
+            format!("--max-count={limit}"),
+            format!("--format={format}"),
+        ],
+    )?;
+
+    let labels = refs_by_sha(refs);
+    Ok(parse_commit_records(&raw, &labels))
+}
+
+pub fn list_commits(env: &GitEnv, path: &Path, limit: Option<usize>) -> AppResult<Vec<Commit>> {
+    let head = run_readonly_raw(env, path, &a(&["rev-parse", "--verify", "--quiet", "HEAD"]))?;
+    if !head.success() {
+        return Ok(Vec::new());
+    }
+
+    let refs = list_refs(env, path).unwrap_or_default();
+    list_commits_with_refs(env, path, limit, &refs, true)
 }
 
 fn parse_count(value: &str) -> u32 {
@@ -742,57 +759,82 @@ pub fn repo_status(env: &GitEnv, path: &Path) -> AppResult<RepoStatus> {
     })
 }
 
+fn join_result<'scope, T: Send>(
+    handle: std::thread::ScopedJoinHandle<'scope, AppResult<T>>,
+) -> AppResult<T> {
+    handle
+        .join()
+        .unwrap_or_else(|_| Err(AppError::io("Фоновый поток git завершился с ошибкой")))
+}
+
 pub fn repo_state(env: &GitEnv, path: &Path) -> AppResult<RepoState> {
-    let head_branch = run_readonly_raw(env, path, &a(&["symbolic-ref", "--short", "-q", "HEAD"]))
+    // Все чтения независимы — запускаем их параллельно, чтобы состояние
+    // песочницы пересчитывалось за один «раунд», а не за десять.
+    let (head_branch, head, refs, status, stash_raw, files_raw, reflog_raw) =
+        std::thread::scope(|scope| {
+            let head_branch = scope.spawn(|| {
+                run_readonly_raw(env, path, &a(&["symbolic-ref", "--short", "-q", "HEAD"]))
+            });
+            let head = scope.spawn(|| {
+                run_readonly_raw(env, path, &a(&["rev-parse", "--verify", "--quiet", "HEAD"]))
+            });
+            let refs = scope.spawn(|| list_refs(env, path));
+            let status = scope.spawn(|| repo_status(env, path));
+            let stash = scope.spawn(|| run_readonly(env, path, &a(&["stash", "list"])));
+            let files = scope.spawn(|| {
+                run_readonly(env, path, &a(&["ls-tree", "-r", "--name-only", "HEAD"]))
+            });
+            let reflog = scope.spawn(|| {
+                run_readonly(
+                    env,
+                    path,
+                    &a(&["reflog", "--format=%H%1f%gd%1f%gs", "-n", "50"]),
+                )
+            });
+
+            (
+                join_result(head_branch),
+                join_result(head),
+                join_result(refs),
+                join_result(status),
+                join_result(stash),
+                join_result(files),
+                join_result(reflog),
+            )
+        });
+
+    let head_branch = head_branch
         .ok()
         .filter(|output| output.success())
         .map(|output| output.stdout.trim().to_string())
         .filter(|value| !value.is_empty());
 
-    let head = run_readonly_raw(env, path, &a(&["rev-parse", "--verify", "--quiet", "HEAD"]))?;
-    let head_sha = if head.success() {
-        Some(head.stdout.trim().to_string())
-    } else {
-        None
+    let head_sha = match head {
+        Ok(output) if output.success() => Some(output.stdout.trim().to_string()),
+        _ => None,
     };
 
-    let branches_raw = run_readonly(
-        env,
-        path,
-        &a(&[
-            "for-each-ref",
-            "--format=%(refname:short)%1f%(objectname)%1f%(HEAD)%1e",
-            "refs/heads",
-        ]),
-    )
-    .unwrap_or_default();
+    let refs = refs.unwrap_or_default();
+    let status = status?;
 
-    let mut branches = Vec::new();
-    for record in branches_raw.split('\x1e') {
-        let record = record.trim_start_matches('\n');
-        if record.is_empty() {
-            continue;
-        }
-        let fields: Vec<&str> = record.split('\x1f').collect();
-        if fields.len() < 3 {
-            continue;
-        }
-        branches.push(BranchState {
-            name: fields[0].to_string(),
-            sha: fields[1].to_string(),
-            is_head: fields[2] == "*",
-        });
-    }
+    let branches = refs
+        .iter()
+        .filter(|reference| reference.kind == "branch")
+        .map(|reference| BranchState {
+            name: reference.name.clone(),
+            sha: reference.target.clone(),
+            is_head: reference.is_head,
+        })
+        .collect();
 
-    let tags = run_readonly(env, path, &a(&["tag", "--list"]))
-        .unwrap_or_default()
-        .lines()
-        .map(|line| line.trim().to_string())
-        .filter(|line| !line.is_empty())
+    let tags = refs
+        .iter()
+        .filter(|reference| reference.kind == "tag")
+        .map(|reference| reference.name.clone())
         .collect();
 
     let commits = if head_sha.is_some() {
-        list_commits(env, path, Some(STATE_LOG_LIMIT))?
+        list_commits_with_refs(env, path, Some(STATE_LOG_LIMIT), &refs, true)?
             .into_iter()
             .map(|commit| CommitState {
                 sha: commit.sha,
@@ -807,40 +849,34 @@ pub fn repo_state(env: &GitEnv, path: &Path) -> AppResult<RepoState> {
         Vec::new()
     };
 
-    let status = repo_status(env, path)?;
-
-    let stash_count = run_readonly(env, path, &a(&["stash", "list"]))
+    let stash_count = stash_raw
         .unwrap_or_default()
         .lines()
         .filter(|line| !line.trim().is_empty())
         .count();
 
-    let files = run_readonly(env, path, &a(&["ls-tree", "-r", "--name-only", "HEAD"]))
+    let files = files_raw
         .unwrap_or_default()
         .lines()
         .map(|line| line.trim().to_string())
         .filter(|line| !line.is_empty())
         .collect();
 
-    let reflog = run_readonly(
-        env,
-        path,
-        &a(&["reflog", "--format=%H%1f%gd%1f%gs", "-n", "50"]),
-    )
-    .unwrap_or_default()
-    .lines()
-    .filter_map(|line| {
-        let fields: Vec<&str> = line.split('\x1f').collect();
-        if fields.len() < 3 {
-            return None;
-        }
-        Some(ReflogEntry {
-            sha: fields[0].to_string(),
-            selector: fields[1].to_string(),
-            subject: fields[2].to_string(),
+    let reflog = reflog_raw
+        .unwrap_or_default()
+        .lines()
+        .filter_map(|line| {
+            let fields: Vec<&str> = line.split('\x1f').collect();
+            if fields.len() < 3 {
+                return None;
+            }
+            Some(ReflogEntry {
+                sha: fields[0].to_string(),
+                selector: fields[1].to_string(),
+                subject: fields[2].to_string(),
+            })
         })
-    })
-    .collect();
+        .collect();
 
     let detached = head_branch.is_none() && head_sha.is_some();
 

@@ -4,7 +4,6 @@ import ReactDOM from "react-dom/client";
 import { RouterProvider } from "react-router-dom";
 import { router } from "./app/router";
 import "./styles/globals.css";
-import "diff2html/bundles/css/diff2html.min.css";
 
 const queryClient = new QueryClient({
   defaultOptions: {

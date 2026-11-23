@@ -1,9 +1,11 @@
-import { html as renderDiff } from "diff2html";
-import { ColorSchemeType } from "diff2html/lib/types";
 import { FileDiff } from "lucide-react";
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 import { EmptyState, ErrorBanner, Spinner } from "@/components/ui";
 
+/**
+ * diff2html весит немало, поэтому подгружаем его только когда пользователь
+ * действительно открыл вкладку с изменениями.
+ */
 export function DiffViewer({
   patch,
   truncated,
@@ -15,21 +17,56 @@ export function DiffViewer({
   loading?: boolean;
   error?: string | null;
 }) {
-  const rendered = useMemo(() => {
-    if (!patch || !patch.trim()) return "";
-    try {
-      return renderDiff(patch, {
-        drawFileList: false,
-        matching: "lines",
-        outputFormat: "line-by-line",
-        colorScheme: ColorSchemeType.DARK,
-      });
-    } catch {
-      return "";
+  const [rendered, setRendered] = useState("");
+  const [rendering, setRendering] = useState(false);
+  const [renderError, setRenderError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!patch || !patch.trim()) {
+      setRendered("");
+      setRendering(false);
+      setRenderError(null);
+      return;
     }
+
+    let cancelled = false;
+    setRendering(true);
+    setRenderError(null);
+
+    Promise.all([
+      import("diff2html"),
+      import("diff2html/lib/types"),
+      import("diff2html/bundles/css/diff2html.min.css"),
+    ])
+      .then(([diff2html, types]) => {
+        if (cancelled) return;
+        try {
+          setRendered(
+            diff2html.html(patch, {
+              drawFileList: false,
+              matching: "lines",
+              outputFormat: "line-by-line",
+              colorScheme: types.ColorSchemeType.DARK,
+            }),
+          );
+        } catch {
+          setRenderError("Не удалось разобрать diff.");
+        } finally {
+          setRendering(false);
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setRenderError("Не удалось загрузить diff-viewer.");
+        setRendering(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [patch]);
 
-  if (loading) {
+  if (loading || rendering) {
     return (
       <div className="flex h-40 items-center justify-center">
         <Spinner />
@@ -41,6 +78,14 @@ export function DiffViewer({
     return (
       <div className="p-3">
         <ErrorBanner message={error} />
+      </div>
+    );
+  }
+
+  if (renderError) {
+    return (
+      <div className="p-3">
+        <ErrorBanner message={renderError} />
       </div>
     );
   }
