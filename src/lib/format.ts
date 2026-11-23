@@ -49,12 +49,7 @@ export function formatNumber(value: number): string {
   return number.format(value);
 }
 
-export function pluralize(
-  count: number,
-  one: string,
-  few: string,
-  many: string,
-): string {
+export function pluralize(count: number, one: string, few: string, many: string): string {
   const mod10 = count % 10;
   const mod100 = count % 100;
   if (mod10 === 1 && mod100 !== 11) return one;

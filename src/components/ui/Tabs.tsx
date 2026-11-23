@@ -28,16 +28,12 @@ export function Tabs({
             onClick={() => onChange(item.id)}
             className={cn(
               "relative -mb-px flex h-9 items-center gap-1.5 border-b-2 px-2.5 text-xs font-medium transition-colors",
-              active
-                ? "border-accent text-fg"
-                : "border-transparent text-fg-muted hover:text-fg",
+              active ? "border-accent text-fg" : "border-transparent text-fg-muted hover:text-fg",
             )}
           >
             {item.label}
             {typeof item.count === "number" ? (
-              <span className="rounded bg-raised px-1 text-[10px] text-fg-faint">
-                {item.count}
-              </span>
+              <span className="rounded bg-raised px-1 text-[10px] text-fg-faint">{item.count}</span>
             ) : null}
           </button>
         );

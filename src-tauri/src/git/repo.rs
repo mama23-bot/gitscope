@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use serde::Serialize;
 
 use crate::error::{AppError, AppResult};
-use crate::git::runner::{run_readonly, run_readonly_raw, GitEnv};
+use crate::git::runner::{GitEnv, run_readonly, run_readonly_raw};
 
 const LOG_LIMIT: usize = 20_000;
 const STATE_LOG_LIMIT: usize = 500;
@@ -297,7 +297,11 @@ pub fn open_repo(env: &GitEnv, path: &str) -> AppResult<RepoInfo> {
         .map(|output| output.stdout.trim().to_string())
         .filter(|value| !value.is_empty());
 
-    let head = run_readonly_raw(env, &root, &a(&["rev-parse", "--verify", "--quiet", "HEAD"]))?;
+    let head = run_readonly_raw(
+        env,
+        &root,
+        &a(&["rev-parse", "--verify", "--quiet", "HEAD"]),
+    )?;
     let head_sha = if head.success() {
         Some(head.stdout.trim().to_string())
     } else {
@@ -468,7 +472,6 @@ fn parse_name_status(raw: &str) -> Vec<(String, Option<String>, String)> {
 fn commit_parents(env: &GitEnv, path: &Path, sha: &str) -> AppResult<Vec<String>> {
     let raw = run_readonly(env, path, &a(&["show", "-s", "--format=%P", sha]))?;
     Ok(raw
-        .trim()
         .split_whitespace()
         .map(|value| value.to_string())
         .collect())
@@ -781,9 +784,8 @@ pub fn repo_state(env: &GitEnv, path: &Path) -> AppResult<RepoState> {
             let refs = scope.spawn(|| list_refs(env, path));
             let status = scope.spawn(|| repo_status(env, path));
             let stash = scope.spawn(|| run_readonly(env, path, &a(&["stash", "list"])));
-            let files = scope.spawn(|| {
-                run_readonly(env, path, &a(&["ls-tree", "-r", "--name-only", "HEAD"]))
-            });
+            let files = scope
+                .spawn(|| run_readonly(env, path, &a(&["ls-tree", "-r", "--name-only", "HEAD"])));
             let reflog = scope.spawn(|| {
                 run_readonly(
                     env,

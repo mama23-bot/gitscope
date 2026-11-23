@@ -2,8 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Copy, GitCommitHorizontal } from "lucide-react";
 import { useState } from "react";
 import { Badge, Button, EmptyState, ErrorBanner, Spinner, Tabs } from "@/components/ui";
-import { errorMessage, ipc } from "@/lib/ipc";
 import { formatDateTime, formatNumber } from "@/lib/format";
+import { errorMessage, ipc } from "@/lib/ipc";
 import type { FileChange } from "@/types";
 import { DiffViewer } from "./DiffViewer";
 
@@ -64,13 +64,7 @@ function FileList({ files }: { files: FileChange[] }) {
   );
 }
 
-export function CommitDetails({
-  repoPath,
-  sha,
-}: {
-  repoPath: string;
-  sha: string | null;
-}) {
+export function CommitDetails({ repoPath, sha }: { repoPath: string; sha: string | null }) {
   const [tab, setTab] = useState("overview");
 
   const details = useQuery({
@@ -129,9 +123,7 @@ export function CommitDetails({
         </div>
 
         <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-fg-muted">
-          <span className="mono rounded bg-raised px-1.5 py-0.5 text-fg">
-            {data.shortSha}
-          </span>
+          <span className="mono rounded bg-raised px-1.5 py-0.5 text-fg">{data.shortSha}</span>
           {data.isMerge ? <Badge tone="info">merge</Badge> : null}
           <span className="truncate">{data.authorName}</span>
           <span className="text-fg-faint">·</span>
@@ -147,9 +139,7 @@ export function CommitDetails({
         <div className="mt-3 flex items-center gap-3 text-[11px]">
           <span className="text-success">+{formatNumber(data.additions)}</span>
           <span className="text-danger">−{formatNumber(data.deletions)}</span>
-          <span className="text-fg-faint">
-            {formatNumber(data.files.length)} файлов
-          </span>
+          <span className="text-fg-faint">{formatNumber(data.files.length)} файлов</span>
         </div>
       </div>
 

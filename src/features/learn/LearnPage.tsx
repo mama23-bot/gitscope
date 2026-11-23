@@ -9,13 +9,7 @@ import { cn } from "@/lib/cn";
 import { ipc } from "@/lib/ipc";
 import type { LessonProgress } from "@/types";
 
-function LessonCard({
-  lesson,
-  progress,
-}: {
-  lesson: Lesson;
-  progress?: LessonProgress;
-}) {
+function LessonCard({ lesson, progress }: { lesson: Lesson; progress?: LessonProgress }) {
   const status = progress?.status;
 
   return (
@@ -34,9 +28,7 @@ function LessonCard({
         )}
       </div>
 
-      <p className="mt-1.5 flex-1 text-xs leading-relaxed text-fg-muted">
-        {lesson.summary}
-      </p>
+      <p className="mt-1.5 flex-1 text-xs leading-relaxed text-fg-muted">{lesson.summary}</p>
 
       <div className="mt-3 flex items-center gap-3 text-[11px] text-fg-faint">
         <span className="flex items-center gap-1">
@@ -78,8 +70,8 @@ export function LearnPage() {
       <div className="mx-auto max-w-4xl px-8 py-8">
         <h1 className="text-lg font-semibold text-fg">Обучение Git</h1>
         <p className="mt-1 max-w-2xl text-sm leading-relaxed text-fg-muted">
-          Короткие уроки с настоящим git в изолированной песочнице. Ошибаться
-          безопасно: твой код и репозитории остаются нетронутыми.
+          Короткие уроки с настоящим git в изолированной песочнице. Ошибаться безопасно: твой код и
+          репозитории остаются нетронутыми.
         </p>
 
         <div className="mt-5 flex flex-wrap gap-1.5">
@@ -112,17 +104,11 @@ export function LearnPage() {
           ))}
         </div>
 
-        {level ? (
-          <p className="mt-4 text-xs text-fg-muted">{level.description}</p>
-        ) : null}
+        {level ? <p className="mt-4 text-xs text-fg-muted">{level.description}</p> : null}
 
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
           {visible.map((lesson) => (
-            <LessonCard
-              key={lesson.id}
-              lesson={lesson}
-              progress={progressMap.get(lesson.id)}
-            />
+            <LessonCard key={lesson.id} lesson={lesson} progress={progressMap.get(lesson.id)} />
           ))}
 
           {visible.length === 0 ? (
@@ -138,21 +124,12 @@ export function LearnPage() {
               Скоро
             </div>
             <div className="mt-2 grid gap-2 sm:grid-cols-2">
-              {LEVELS.filter((item) => lessonsByLevel(item.id).length === 0).map(
-                (item) => (
-                  <div
-                    key={item.id}
-                    className="rounded-lg border border-line bg-surface p-3"
-                  >
-                    <div className="text-xs font-medium text-fg-muted">
-                      {item.title}
-                    </div>
-                    <div className="mt-0.5 text-[11px] text-fg-faint">
-                      {item.description}
-                    </div>
-                  </div>
-                ),
-              )}
+              {LEVELS.filter((item) => lessonsByLevel(item.id).length === 0).map((item) => (
+                <div key={item.id} className="rounded-lg border border-line bg-surface p-3">
+                  <div className="text-xs font-medium text-fg-muted">{item.title}</div>
+                  <div className="mt-0.5 text-[11px] text-fg-faint">{item.description}</div>
+                </div>
+              ))}
             </div>
           </div>
         ) : null}

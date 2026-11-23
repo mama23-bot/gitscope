@@ -25,9 +25,7 @@ export function PanelHeader({
     >
       <div className="min-w-0">
         <div className="truncate text-[13px] font-semibold text-fg">{title}</div>
-        {subtitle ? (
-          <div className="truncate text-[11px] text-fg-faint">{subtitle}</div>
-        ) : null}
+        {subtitle ? <div className="truncate text-[11px] text-fg-faint">{subtitle}</div> : null}
       </div>
       {actions ? <div className="flex shrink-0 items-center gap-1.5">{actions}</div> : null}
     </div>

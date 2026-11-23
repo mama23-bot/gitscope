@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
+import { useState } from "react";
 import { errorMessage, ipc } from "@/lib/ipc";
 import { useRepoStore } from "./store";
 

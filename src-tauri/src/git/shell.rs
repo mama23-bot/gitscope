@@ -57,14 +57,15 @@ pub fn resolve(root: &Path, cwd: &str, target: &str) -> AppResult<PathBuf> {
     let (base, relative) = if target == "~" || target.starts_with("~/") {
         (
             root.to_path_buf(),
-            target.trim_start_matches('~').trim_start_matches('/').to_string(),
+            target
+                .trim_start_matches('~')
+                .trim_start_matches('/')
+                .to_string(),
         )
     } else if target.starts_with('/') || target.starts_with('\\') {
         (
             root.to_path_buf(),
-            target
-                .trim_start_matches(|character| character == '/' || character == '\\')
-                .to_string(),
+            target.trim_start_matches(['/', '\\']).to_string(),
         )
     } else {
         (join_cwd(root, cwd), target.to_string())
@@ -115,14 +116,14 @@ fn has_flag(args: &[String], name: &str) -> bool {
 }
 
 fn positional(args: &[String]) -> Vec<&String> {
-    args.iter().filter(|argument| !argument.starts_with('-')).collect()
+    args.iter()
+        .filter(|argument| !argument.starts_with('-'))
+        .collect()
 }
 
 fn read_file(root: &Path, cwd: &str, target: &str) -> AppResult<String> {
     let path = resolve(root, cwd, target)?;
-    fs::read_to_string(&path).map_err(|error| {
-        AppError::invalid(format!("{target}: {error}"))
-    })
+    fs::read_to_string(&path).map_err(|error| AppError::invalid(format!("{target}: {error}")))
 }
 
 fn copy_dir_all(source: &Path, destination: &Path) -> std::io::Result<()> {
@@ -148,10 +149,10 @@ fn line_count(args: &[String], default: usize) -> usize {
                 .and_then(|value| value.parse().ok())
                 .unwrap_or(default);
         }
-        if let Some(value) = argument.strip_prefix("-n") {
-            if let Ok(parsed) = value.parse() {
-                return parsed;
-            }
+        if let Some(value) = argument.strip_prefix("-n")
+            && let Ok(parsed) = value.parse()
+        {
+            return parsed;
         }
     }
     default
@@ -171,9 +172,7 @@ fn cmd_ls(root: &Path, cwd: &str, args: &[String]) -> AppResult<ShellOutput> {
         return Ok(output(format!("{target}\n"), cwd));
     }
 
-    let mut entries: Vec<_> = fs::read_dir(&directory)?
-        .filter_map(Result::ok)
-        .collect();
+    let mut entries: Vec<_> = fs::read_dir(&directory)?.filter_map(Result::ok).collect();
     entries.sort_by_key(|entry| entry.file_name());
 
     let mut lines = Vec::new();
@@ -324,8 +323,7 @@ fn cmd_mv(root: &Path, cwd: &str, args: &[String]) -> AppResult<ShellOutput> {
         );
     }
 
-    fs::rename(&source, &destination)
-        .map_err(|error| AppError::invalid(format!("mv: {error}")))?;
+    fs::rename(&source, &destination).map_err(|error| AppError::invalid(format!("mv: {error}")))?;
     Ok(output("", cwd))
 }
 
@@ -371,11 +369,7 @@ fn cmd_echo(_root: &Path, cwd: &str, args: &[String]) -> AppResult<ShellOutput> 
         .join(" ");
 
     Ok(output(
-        if newline {
-            format!("{text}\n")
-        } else {
-            text
-        },
+        if newline { format!("{text}\n") } else { text },
         cwd,
     ))
 }
@@ -441,12 +435,7 @@ fn cmd_grep(root: &Path, cwd: &str, args: &[String]) -> AppResult<ShellOutput> {
     Ok(output(stdout, cwd))
 }
 
-fn walk(
-    root: &Path,
-    path: &Path,
-    name_filter: Option<&str>,
-    output: &mut Vec<String>,
-) {
+fn walk(root: &Path, path: &Path, name_filter: Option<&str>, output: &mut Vec<String>) {
     let Ok(entries) = fs::read_dir(path) else {
         return;
     };
@@ -600,8 +589,8 @@ pub fn run_builtin(root: &Path, cwd: &str, tokens: &[String]) -> AppResult<Shell
                 return Ok(failure("which: укажи команду", cwd));
             }
             let known = [
-                "git", "pwd", "cd", "ls", "cat", "head", "tail", "touch", "mkdir", "rm",
-                "mv", "cp", "echo", "wc", "grep", "find", "tree", "clear", "help",
+                "git", "pwd", "cd", "ls", "cat", "head", "tail", "touch", "mkdir", "rm", "mv",
+                "cp", "echo", "wc", "grep", "find", "tree", "clear", "help",
             ];
             if known.contains(&target) {
                 Ok(output(format!("{target}: встроено в GitScope\n"), cwd))
@@ -649,15 +638,13 @@ pub fn find_bash() -> Option<PathBuf> {
         std::env::var("ProgramFiles(x86)")
             .ok()
             .map(|path| PathBuf::from(path).join("Git").join("bin").join("bash.exe")),
-        std::env::var("LOCALAPPDATA")
-            .ok()
-            .map(|path| {
-                PathBuf::from(path)
-                    .join("Programs")
-                    .join("Git")
-                    .join("bin")
-                    .join("bash.exe")
-            }),
+        std::env::var("LOCALAPPDATA").ok().map(|path| {
+            PathBuf::from(path)
+                .join("Programs")
+                .join("Git")
+                .join("bin")
+                .join("bash.exe")
+        }),
     ];
 
     for candidate in candidates.into_iter().flatten() {
@@ -766,9 +753,7 @@ pub fn run_full(env: &GitEnv, root: &Path, cwd: &str, input: &str) -> AppResult<
     if let Some(index) = stdout.rfind(&marker) {
         let pwd = stdout[index + marker.len()..].trim().replace('\\', "/");
         stdout.truncate(index);
-        stdout = stdout
-            .trim_end_matches(|character| character == '\r' || character == '\n')
-            .to_string();
+        stdout = stdout.trim_end_matches(['\r', '\n']).to_string();
 
         new_cwd = if let Some(relative) = pwd.strip_prefix(&root_msys) {
             let relative = relative.trim_start_matches('/');
@@ -796,10 +781,8 @@ mod tests {
     use super::*;
 
     fn sandbox(name: &str) -> PathBuf {
-        let root = std::env::temp_dir().join(format!(
-            "gitscope-shell-{name}-{}",
-            std::process::id()
-        ));
+        let root =
+            std::env::temp_dir().join(format!("gitscope-shell-{name}-{}", std::process::id()));
         let _ = fs::remove_dir_all(&root);
         fs::create_dir_all(&root).expect("create sandbox");
         root
@@ -823,11 +806,7 @@ mod tests {
         let result = run_builtin(&root, "/", &tokens).expect("cd");
         assert_eq!(result.cwd, "/src");
 
-        let tokens = vec![
-            "echo".to_string(),
-            "hello".to_string(),
-            "world".to_string(),
-        ];
+        let tokens = vec!["echo".to_string(), "hello".to_string(), "world".to_string()];
         let result = run_builtin(&root, "/src", &tokens).expect("echo");
         redirect_to_file(&root, "/src", &result.stdout, "note.txt", false).expect("redirect");
 

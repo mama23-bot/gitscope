@@ -19,7 +19,7 @@ const playgroundSpec: SandboxSpec = {
     },
     {
       path: "app.js",
-      content: "console.log(\"hello from GitScope\");\n",
+      content: 'console.log("hello from GitScope");\n',
     },
   ],
   commits: [
@@ -28,7 +28,7 @@ const playgroundSpec: SandboxSpec = {
       files: [
         {
           path: "app.js",
-          content: "console.log(\"hello from GitScope\");\nconsole.log(\"ready\");\n",
+          content: 'console.log("hello from GitScope");\nconsole.log("ready");\n',
         },
       ],
     },
@@ -44,7 +44,7 @@ export function PlaygroundPage() {
   const bashAvailable = appInfo.data?.bashAvailable ?? true;
 
   useEffect(() => {
-    if (appInfo.data && !appInfo.data.bashAvailable) {
+    if (appInfo.data?.bashAvailable === false) {
       setMode("safe");
     }
   }, [appInfo.data]);
@@ -67,9 +67,7 @@ export function PlaygroundPage() {
               disabled={!bashAvailable}
               className={cn(
                 "rounded px-2 py-1 text-[11px] transition-colors",
-                mode === "full"
-                  ? "bg-accent-soft text-fg"
-                  : "text-fg-muted hover:text-fg",
+                mode === "full" ? "bg-accent-soft text-fg" : "text-fg-muted hover:text-fg",
                 !bashAvailable && "cursor-not-allowed opacity-40",
               )}
             >
@@ -80,9 +78,7 @@ export function PlaygroundPage() {
               onClick={() => setMode("safe")}
               className={cn(
                 "rounded px-2 py-1 text-[11px] transition-colors",
-                mode === "safe"
-                  ? "bg-accent-soft text-fg"
-                  : "text-fg-muted hover:text-fg",
+                mode === "safe" ? "bg-accent-soft text-fg" : "text-fg-muted hover:text-fg",
               )}
             >
               Безопасный
@@ -135,7 +131,7 @@ export function PlaygroundPage() {
                 "git log --oneline --graph --all",
                 "git switch -c feature",
                 "git add .",
-                "git commit -m \"...\"",
+                'git commit -m "..."',
                 "git merge --no-ff feature",
                 "git branch -d feature",
               ].map((command) => (

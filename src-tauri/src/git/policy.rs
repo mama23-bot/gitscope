@@ -287,12 +287,10 @@ pub fn assert_read_only(args: &[String]) -> AppResult<()> {
                 ));
             }
         }
-        "reflog" => {
-            if args.len() > 1 && !["show", "exists"].contains(&args[1].as_str()) {
-                return Err(AppError::policy(
-                    "Изменение reflog в репозитории пользователя запрещено.",
-                ));
-            }
+        "reflog" if args.len() > 1 && !["show", "exists"].contains(&args[1].as_str()) => {
+            return Err(AppError::policy(
+                "Изменение reflog в репозитории пользователя запрещено.",
+            ));
         }
         _ => {}
     }

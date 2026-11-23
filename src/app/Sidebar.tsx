@@ -45,17 +45,14 @@ function NavItem({
   const location = useLocation();
   const [pathname, search] = to.split("?");
   const active =
-    location.pathname === pathname &&
-    (search ? location.search === `?${search}` : true);
+    location.pathname === pathname && (search ? location.search === `?${search}` : true);
 
   return (
     <Link
       to={to}
       className={cn(
         "group flex h-8 items-center gap-2 rounded-md px-2 text-[12.5px] transition-colors",
-        active
-          ? "bg-accent-soft text-fg"
-          : "text-fg-muted hover:bg-raised hover:text-fg",
+        active ? "bg-accent-soft text-fg" : "text-fg-muted hover:bg-raised hover:text-fg",
       )}
     >
       <Icon
@@ -66,9 +63,7 @@ function NavItem({
       />
       <span className="truncate">{label}</span>
       {badge ? (
-        <span className="ml-auto rounded bg-raised px-1 text-[10px] text-fg-faint">
-          {badge}
-        </span>
+        <span className="ml-auto rounded bg-raised px-1 text-[10px] text-fg-faint">{badge}</span>
       ) : null}
     </Link>
   );
@@ -90,9 +85,7 @@ export function Sidebar() {
     <aside className="flex w-[228px] shrink-0 flex-col border-r border-line bg-surface">
       <div className="flex h-12 items-center gap-2 px-4">
         <Logo size={22} />
-        <span className="text-[13px] font-semibold tracking-[0.16em] text-fg">
-          GITSCOPE
-        </span>
+        <span className="text-[13px] font-semibold tracking-[0.16em] text-fg">GITSCOPE</span>
       </div>
 
       <nav className="flex-1 overflow-y-auto px-2 py-2">

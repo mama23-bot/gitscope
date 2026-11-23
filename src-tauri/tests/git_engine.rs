@@ -7,10 +7,7 @@ use gitscope_lib::git::sandbox::{self, SandboxSpec, ShellMode};
 use gitscope_lib::git::shell::find_bash;
 
 fn temp_dir(name: &str) -> PathBuf {
-    let dir = std::env::temp_dir().join(format!(
-        "gitscope-test-{name}-{}",
-        std::process::id()
-    ));
+    let dir = std::env::temp_dir().join(format!("gitscope-test-{name}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).expect("create temp dir");
     dir
@@ -54,8 +51,7 @@ fn reads_history_and_runs_sandbox() {
     assert_eq!(commits.len(), 1);
     assert_eq!(commits[0].subject, "Initial commit");
 
-    let details =
-        repo::commit_details(&env, &repo_dir, &commits[0].sha).expect("commit details");
+    let details = repo::commit_details(&env, &repo_dir, &commits[0].sha).expect("commit details");
     assert_eq!(details.files.len(), 1);
     assert_eq!(details.files[0].path, "README.md");
 
@@ -101,11 +97,11 @@ fn reads_history_and_runs_sandbox() {
     let escape = sandbox::run_command(&env, &sandbox_dir, "/", "git log -C ..", ShellMode::Safe);
     assert!(escape.is_err(), "path escape must be blocked");
 
-    let shell = sandbox::run_command(&env, &sandbox_dir, "/", "mkdir src", ShellMode::Safe)
-        .expect("mkdir");
+    let shell =
+        sandbox::run_command(&env, &sandbox_dir, "/", "mkdir src", ShellMode::Safe).expect("mkdir");
     assert_eq!(shell.code, 0);
-    let shell = sandbox::run_command(&env, &sandbox_dir, "/", "cd src", ShellMode::Safe)
-        .expect("cd");
+    let shell =
+        sandbox::run_command(&env, &sandbox_dir, "/", "cd src", ShellMode::Safe).expect("cd");
     assert_eq!(shell.cwd, "/src");
     let shell = sandbox::run_command(
         &env,
@@ -116,14 +112,8 @@ fn reads_history_and_runs_sandbox() {
     )
     .expect("echo redirect");
     assert_eq!(shell.code, 0);
-    let shell = sandbox::run_command(
-        &env,
-        &sandbox_dir,
-        "/src",
-        "cat note.txt",
-        ShellMode::Safe,
-    )
-    .expect("cat");
+    let shell = sandbox::run_command(&env, &sandbox_dir, "/src", "cat note.txt", ShellMode::Safe)
+        .expect("cat");
     assert_eq!(shell.stdout, "hello\n");
     let escape = sandbox::run_command(&env, &sandbox_dir, "/", "cd ../../..", ShellMode::Safe)
         .expect("cd clamp");

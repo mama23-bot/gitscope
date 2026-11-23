@@ -1,5 +1,4 @@
 import { invoke } from "@tauri-apps/api/core";
-import { mockIpc } from "./mock-ipc";
 import type {
   AppInfo,
   CommandResult,
@@ -16,19 +15,18 @@ import type {
   SandboxSpec,
   ShellMode,
 } from "@/types";
+import { mockIpc } from "./mock-ipc";
 
 const realIpc = {
   gitVersion: () => invoke<string>("git_version"),
   appInfo: () => invoke<AppInfo>("app_info"),
 
   openRepo: (path: string) => invoke<RepoInfo>("open_repo", { path }),
-  listCommits: (path: string, limit?: number) =>
-    invoke<Commit[]>("list_commits", { path, limit }),
+  listCommits: (path: string, limit?: number) => invoke<Commit[]>("list_commits", { path, limit }),
   listRefs: (path: string) => invoke<RefInfo[]>("list_refs", { path }),
   commitDetails: (path: string, sha: string) =>
     invoke<CommitDetails>("commit_details", { path, sha }),
-  commitDiff: (path: string, sha: string) =>
-    invoke<DiffPayload>("commit_diff", { path, sha }),
+  commitDiff: (path: string, sha: string) => invoke<DiffPayload>("commit_diff", { path, sha }),
   repoStatus: (path: string) => invoke<RepoStatus>("repo_status", { path }),
 
   recentRepos: () => invoke<RecentRepo[]>("recent_repos"),
@@ -52,12 +50,10 @@ const realIpc = {
   }) => invoke<void>("save_progress", payload),
 
   getSettings: () => invoke<Record<string, string>>("get_settings"),
-  setSetting: (key: string, value: string) =>
-    invoke<void>("set_setting", { key, value }),
+  setSetting: (key: string, value: string) => invoke<void>("set_setting", { key, value }),
 };
 
-const isTauri =
-  typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
 /** В Tauri — реальный git, в обычном браузере — демо-мок для превью интерфейса. */
 export const ipc: typeof realIpc = isTauri ? realIpc : mockIpc;

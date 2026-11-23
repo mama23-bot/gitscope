@@ -1,11 +1,5 @@
+import { branchExists, commitsAhead, fileExists, isAncestor, tipParents } from "@/lib/validators";
 import type { SandboxSpec } from "@/types";
-import {
-  branchExists,
-  commitsAhead,
-  fileExists,
-  isAncestor,
-  tipParents,
-} from "@/lib/validators";
 import type { Lesson } from "../types";
 
 const spec: SandboxSpec = {
@@ -13,13 +7,12 @@ const spec: SandboxSpec = {
   files: [
     {
       path: "README.md",
-      content:
-        "# Учебный проект\n\nЗдесь мы тренируем ветки и merge в GitScope.\n",
+      content: "# Учебный проект\n\nЗдесь мы тренируем ветки и merge в GitScope.\n",
     },
     {
       path: "app.js",
       content:
-        "function greet(name) {\n  return `Привет, ${name}!`;\n}\n\nconsole.log(greet(\"мир\"));\n",
+        'function greet(name) {\n  return "Привет, " + name + "!";\n}\n\nconsole.log(greet("мир"));\n',
     },
   ],
   commits: [
@@ -36,8 +29,7 @@ const spec: SandboxSpec = {
   untrackedFiles: [
     {
       path: "login.js",
-      content:
-        "export function login(user, password) {\n  return Boolean(user && password);\n}\n",
+      content: "export function login(user, password) {\n  return Boolean(user && password);\n}\n",
     },
   ],
 };
@@ -46,8 +38,7 @@ export const branchingMergeLesson: Lesson = {
   id: "branching-merge",
   level: "branching",
   title: "Ветки и merge",
-  summary:
-    "Создай ветку, сделай в ней коммит и влей изменения в main через явный merge-коммит.",
+  summary: "Создай ветку, сделай в ней коммит и влей изменения в main через явный merge-коммит.",
   duration: "10–15 минут",
   xp: 100,
   spec,
@@ -67,11 +58,10 @@ export const branchingMergeLesson: Lesson = {
       title: "Закоммить login.js",
       description:
         "В рабочей папке уже лежит неотслеживаемый файл login.js. Посмотри на него через git status, добавь в индекс и создай коммит.",
-      hint: "git add login.js, затем git commit -m \"add login page\"",
-      commands: ["git add login.js", "git commit -m \"add login page\""],
+      hint: 'git add login.js, затем git commit -m "add login page"',
+      commands: ["git add login.js", 'git commit -m "add login page"'],
       validate: (state) =>
-        fileExists(state, "login.js") &&
-        commitsAhead(state, "feature/login", "main").length >= 1,
+        fileExists(state, "login.js") && commitsAhead(state, "feature/login", "main").length >= 1,
     },
     {
       id: "back-to-main",
@@ -101,8 +91,7 @@ export const branchingMergeLesson: Lesson = {
         "Коммиты ветки уже в main, поэтому ветку можно безопасно удалить. Файл login.js при этом останется в истории.",
       hint: "git branch -d feature/login",
       commands: ["git branch -d feature/login"],
-      validate: (state) =>
-        !branchExists(state, "feature/login") && fileExists(state, "login.js"),
+      validate: (state) => !branchExists(state, "feature/login") && fileExists(state, "login.js"),
     },
   ],
 };

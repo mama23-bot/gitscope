@@ -6,7 +6,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["src/**", "*.ts", "*.json", "!src-tauri/**", "!dist/**"]
+    "includes": ["src/**", "*.ts", "*.json", "!src-tauri", "!dist"]
   },
   "formatter": {
     "enabled": true,
@@ -17,13 +17,18 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true,
+      "preset": "recommended",
       "suspicious": {
         "noExplicitAny": "warn"
       },
       "a11y": {
         "useKeyWithClickEvents": "off"
       }
+    }
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
     }
   },
   "javascript": {

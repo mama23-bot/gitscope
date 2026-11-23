@@ -6,8 +6,8 @@ import { useOpenRepo } from "@/app/useOpenRepo";
 import { Logo } from "@/components/Logo";
 import { Button, ErrorBanner, Spinner } from "@/components/ui";
 import { demoSpec } from "@/content/scenarios/demo";
-import { errorMessage, ipc } from "@/lib/ipc";
 import { formatRelativeTime } from "@/lib/format";
+import { errorMessage, ipc } from "@/lib/ipc";
 
 export function RepoPicker() {
   const setRepo = useRepoStore((state) => state.setRepo);
@@ -63,9 +63,8 @@ export function RepoPicker() {
         </div>
 
         <p className="mt-7 max-w-xl text-sm leading-relaxed text-fg-muted">
-          Открой локальный репозиторий, чтобы увидеть граф коммитов, ветки и
-          изменения. GitScope работает только на чтение и никогда не меняет твой
-          код.
+          Открой локальный репозиторий, чтобы увидеть граф коммитов, ветки и изменения. GitScope
+          работает только на чтение и никогда не меняет твой код.
         </p>
 
         <div className="mt-5 flex flex-wrap gap-2">
@@ -77,11 +76,7 @@ export function RepoPicker() {
           >
             Открыть репозиторий
           </Button>
-          <Button
-            icon={<Sparkles className="size-4" />}
-            onClick={createDemo}
-            disabled={demoBusy}
-          >
+          <Button icon={<Sparkles className="size-4" />} onClick={createDemo} disabled={demoBusy}>
             {demoBusy ? "Создаю демо…" : "Создать демо-репозиторий"}
           </Button>
         </div>

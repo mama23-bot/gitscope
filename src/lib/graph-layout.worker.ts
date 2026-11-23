@@ -1,9 +1,7 @@
 import { computeGraphLayout, type GraphInput } from "./graph-layout";
 
 const scope = self as unknown as {
-  onmessage: (
-    event: MessageEvent<{ id: number; commits: GraphInput[] }>,
-  ) => void;
+  onmessage: (event: MessageEvent<{ id: number; commits: GraphInput[] }>) => void;
   postMessage: (value: unknown) => void;
 };
 

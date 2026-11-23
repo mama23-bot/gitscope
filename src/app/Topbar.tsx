@@ -13,9 +13,7 @@ export function Topbar() {
         {repo ? (
           <>
             <FolderGit2 className="size-4 shrink-0 text-fg-faint" />
-            <span className="truncate text-[13px] font-medium text-fg">
-              {repo.name}
-            </span>
+            <span className="truncate text-[13px] font-medium text-fg">{repo.name}</span>
             {repo.headBranch ? (
               <Badge tone="accent">
                 <GitBranch className="size-3" />
@@ -24,9 +22,7 @@ export function Topbar() {
             ) : repo.detached ? (
               <Badge tone="warning">detached HEAD</Badge>
             ) : null}
-            <span className="hidden truncate text-[11px] text-fg-faint xl:inline">
-              {repo.path}
-            </span>
+            <span className="hidden truncate text-[11px] text-fg-faint xl:inline">{repo.path}</span>
           </>
         ) : (
           <span className="text-xs text-fg-muted">Репозиторий не выбран</span>

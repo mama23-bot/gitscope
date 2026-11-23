@@ -29,16 +29,10 @@ export function commitsOn(state: RepoState, branch: string): RepoState["commits"
   return state.commits.filter((commit) => reachable.has(commit.sha));
 }
 
-export function commitsAhead(
-  state: RepoState,
-  branch: string,
-  base: string,
-): RepoState["commits"] {
+export function commitsAhead(state: RepoState, branch: string, base: string): RepoState["commits"] {
   const branchSet = reachableFrom(state, tipOf(state, branch));
   const baseSet = reachableFrom(state, tipOf(state, base));
-  return state.commits.filter(
-    (commit) => branchSet.has(commit.sha) && !baseSet.has(commit.sha),
-  );
+  return state.commits.filter((commit) => branchSet.has(commit.sha) && !baseSet.has(commit.sha));
 }
 
 export function isAncestor(state: RepoState, ancestor: string, descendant: string): boolean {

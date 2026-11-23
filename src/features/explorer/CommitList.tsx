@@ -1,9 +1,9 @@
 import { GitBranch, Tag } from "lucide-react";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { formatRelativeTime } from "@/lib/format";
-import { laneColor, type GraphLayout, type GraphRow, type GraphSegment } from "@/lib/graph-layout";
+import { type GraphLayout, type GraphRow, type GraphSegment, laneColor } from "@/lib/graph-layout";
 import type { Commit, RefLabel } from "@/types";
 
 const ROW_HEIGHT = 30;
@@ -72,30 +72,25 @@ function CommitRow({
       type="button"
       onClick={onSelect}
       style={style}
-      aria-selected={selected}
+      aria-current={selected ? "true" : undefined}
       className={cn(
         "flex w-full items-center gap-2 px-2 text-left transition-colors",
         selected ? "bg-accent-soft" : "hover:bg-raised/70",
       )}
     >
-      <svg
-        width={graphWidth}
-        height={ROW_HEIGHT}
-        className="shrink-0"
-        aria-hidden="true"
-      >
-        {row?.top.map((segment, index) => (
+      <svg width={graphWidth} height={ROW_HEIGHT} className="shrink-0" aria-hidden="true">
+        {row?.top.map((segment) => (
           <path
-            key={`top-${index}`}
+            key={`top-${segment.from}-${segment.to}-${segment.color}`}
             d={segmentPath(segment, "top")}
             stroke={laneColor(segment.color)}
             strokeWidth={1.5}
             fill="none"
           />
         ))}
-        {row?.bottom.map((segment, index) => (
+        {row?.bottom.map((segment) => (
           <path
-            key={`bottom-${index}`}
+            key={`bottom-${segment.from}-${segment.to}-${segment.color}`}
             d={segmentPath(segment, "bottom")}
             stroke={laneColor(segment.color)}
             strokeWidth={1.5}
@@ -164,10 +159,7 @@ export function CommitList({
   }, []);
 
   const start = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - 8);
-  const end = Math.min(
-    commits.length,
-    Math.ceil((scrollTop + viewport) / ROW_HEIGHT) + 8,
-  );
+  const end = Math.min(commits.length, Math.ceil((scrollTop + viewport) / ROW_HEIGHT) + 8);
 
   const laneCount = Math.max(layout.laneCount, 1);
   const graphWidth = laneCount * LANE_WIDTH + GRAPH_PADDING * 2;

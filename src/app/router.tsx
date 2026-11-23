@@ -2,13 +2,13 @@ import { createHashRouter, Navigate } from "react-router-dom";
 import { ExplorerPage } from "@/features/explorer/ExplorerPage";
 import { LearnPage } from "@/features/learn/LearnPage";
 import { LessonPage } from "@/features/learn/LessonPage";
+import { NotFoundPage } from "@/features/placeholders/NotFoundPage";
 import {
   AnalyticsPage,
   ChallengesPage,
   ComparePage,
   SearchPage,
 } from "@/features/placeholders/PlaceholderPages";
-import { NotFoundPage } from "@/features/placeholders/NotFoundPage";
 import { PlaygroundPage } from "@/features/playground/PlaygroundPage";
 import { ProgressPage } from "@/features/progress/ProgressPage";
 import { SettingsPage } from "@/features/settings/SettingsPage";

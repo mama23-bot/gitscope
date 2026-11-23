@@ -10,8 +10,7 @@ export const demoSpec: SandboxSpec = {
     },
     {
       path: "src/app.js",
-      content:
-        "export function start() {\n  console.log(\"Aurora started\");\n}\n\nstart();\n",
+      content: 'export function start() {\n  console.log("Aurora started");\n}\n\nstart();\n',
     },
     {
       path: "src/styles.css",
@@ -24,7 +23,7 @@ export const demoSpec: SandboxSpec = {
       files: [
         {
           path: "package.json",
-          content: "{\n  \"name\": \"aurora\",\n  \"version\": \"0.1.0\"\n}\n",
+          content: '{\n  "name": "aurora",\n  "version": "0.1.0"\n}\n',
         },
       ],
     },
@@ -33,7 +32,7 @@ export const demoSpec: SandboxSpec = {
       files: [
         {
           path: "src/router.js",
-          content: "export const routes = [\"/\", \"/about\", \"/dashboard\"];\n",
+          content: 'export const routes = ["/", "/about", "/dashboard"];\n',
         },
       ],
     },

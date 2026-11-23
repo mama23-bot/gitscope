@@ -11,11 +11,7 @@ export interface TerminalEntry {
   durationMs: number;
 }
 
-export function useSandbox(
-  scenarioId: string,
-  spec: SandboxSpec,
-  mode: ShellMode = "safe",
-) {
+export function useSandbox(scenarioId: string, spec: SandboxSpec, mode: ShellMode = "safe") {
   const storageKey = `gitscope:sandbox:${scenarioId}`;
   const [sandboxId, setSandboxId] = useState<string | null>(null);
   const [state, setState] = useState<RepoState | null>(null);

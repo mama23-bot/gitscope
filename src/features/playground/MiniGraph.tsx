@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Badge } from "@/components/ui";
-import { laneColor, type GraphSegment } from "@/lib/graph-layout";
+import { type GraphSegment, laneColor } from "@/lib/graph-layout";
 import { useGraphLayout } from "@/lib/useGraphLayout";
 import type { Commit, RepoState } from "@/types";
 
@@ -76,18 +76,18 @@ export function MiniGraph({ state }: { state: RepoState | null }) {
         return (
           <div key={commit.sha} className="flex h-[26px] items-center gap-2">
             <svg width={width} height={ROW_HEIGHT} className="shrink-0" aria-hidden="true">
-              {row?.top.map((segment, segmentIndex) => (
+              {row?.top.map((segment) => (
                 <path
-                  key={`top-${segmentIndex}`}
+                  key={`top-${segment.from}-${segment.to}-${segment.color}`}
                   d={segmentPath(segment, "top")}
                   stroke={laneColor(segment.color)}
                   strokeWidth={1.4}
                   fill="none"
                 />
               ))}
-              {row?.bottom.map((segment, segmentIndex) => (
+              {row?.bottom.map((segment) => (
                 <path
-                  key={`bottom-${segmentIndex}`}
+                  key={`bottom-${segment.from}-${segment.to}-${segment.color}`}
                   d={segmentPath(segment, "bottom")}
                   stroke={laneColor(segment.color)}
                   strokeWidth={1.4}
@@ -106,24 +106,18 @@ export function MiniGraph({ state }: { state: RepoState | null }) {
               ) : null}
             </svg>
 
-            <span className="min-w-0 flex-1 truncate text-[11px] text-fg">
-              {commit.subject}
-            </span>
+            <span className="min-w-0 flex-1 truncate text-[11px] text-fg">{commit.subject}</span>
 
             {commit.refs.map((ref) => (
               <Badge
                 key={`${ref.kind}:${ref.name}`}
-                tone={
-                  ref.kind === "tag" ? "warning" : ref.isHead ? "success" : "accent"
-                }
+                tone={ref.kind === "tag" ? "warning" : ref.isHead ? "success" : "accent"}
               >
                 {ref.name}
               </Badge>
             ))}
 
-            <span className="mono shrink-0 text-[10px] text-fg-faint">
-              {commit.shortSha}
-            </span>
+            <span className="mono shrink-0 text-[10px] text-fg-faint">{commit.shortSha}</span>
           </div>
         );
       })}

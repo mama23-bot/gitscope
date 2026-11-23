@@ -52,13 +52,7 @@ export function EmptyState({
   );
 }
 
-export function ErrorBanner({
-  message,
-  onRetry,
-}: {
-  message: string;
-  onRetry?: () => void;
-}) {
+export function ErrorBanner({ message, onRetry }: { message: string; onRetry?: () => void }) {
   return (
     <div className="flex items-start gap-2 rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger">
       <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />

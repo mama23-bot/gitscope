@@ -5,15 +5,7 @@ import type { ReactNode } from "react";
 import { Button, Spinner } from "@/components/ui";
 import { ipc } from "@/lib/ipc";
 
-function Card({
-  icon,
-  title,
-  children,
-}: {
-  icon: ReactNode;
-  title: string;
-  children: ReactNode;
-}) {
+function Card({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
   return (
     <section className="rounded-lg border border-line bg-surface p-4">
       <div className="flex items-center gap-2 text-xs font-semibold text-fg">
@@ -63,8 +55,8 @@ export function SettingsPage() {
                 value={info.data.bashAvailable ? "Git Bash доступен" : "недоступен"}
               />
               <p className="text-[11px] leading-relaxed text-fg-faint">
-                GitScope использует системный git. Если команда не найдена,
-                установи Git for Windows и перезапусти приложение.
+                GitScope использует системный git. Если команда не найдена, установи Git for Windows
+                и перезапусти приложение.
               </p>
             </Card>
 
@@ -86,9 +78,9 @@ export function SettingsPage() {
 
             <Card icon={<ShieldCheck className="size-4" />} title="Безопасность">
               <p className="leading-relaxed">
-                Репозитории пользователя открываются только для чтения: GitScope
-                выполняет исключительно команды просмотра истории. Все изменения
-                происходят в отдельных песочницах внутри папки данных.
+                Репозитории пользователя открываются только для чтения: GitScope выполняет
+                исключительно команды просмотра истории. Все изменения происходят в отдельных
+                песочницах внутри папки данных.
               </p>
               <p className="leading-relaxed">
                 Сетевые команды git (clone, fetch, push) в песочницах отключены.

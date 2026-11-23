@@ -21,9 +21,7 @@ describe("computeGraphLayout", () => {
       { sha: "base", parents: [] },
     ]);
 
-    const lanes = Object.fromEntries(
-      layout.rows.map((row) => [row.sha, row.lane]),
-    );
+    const lanes = Object.fromEntries(layout.rows.map((row) => [row.sha, row.lane]));
 
     expect(lanes.merge).toBe(0);
     expect(lanes.main2).toBe(0);

@@ -293,11 +293,7 @@ pub async fn get_settings(state: State<'_, AppState>) -> AppResult<HashMap<Strin
 }
 
 #[tauri::command]
-pub async fn set_setting(
-    state: State<'_, AppState>,
-    key: String,
-    value: String,
-) -> AppResult<()> {
+pub async fn set_setting(state: State<'_, AppState>, key: String, value: String) -> AppResult<()> {
     let connection = lock_db(state.inner())?;
     db::settings_set(&connection, &key, &value)
 }

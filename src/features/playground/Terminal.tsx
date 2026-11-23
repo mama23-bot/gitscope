@@ -1,5 +1,5 @@
 import { CornerDownLeft, RotateCcw, TerminalSquare } from "lucide-react";
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 import { Button, Kbd } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import type { ShellMode } from "@/types";
@@ -7,7 +7,7 @@ import type { TerminalEntry } from "./useSandbox";
 
 function friendlyHint(stderr: string): string | null {
   if (stderr.includes("Aborting commit due to empty commit message")) {
-    return "Добавь сообщение: git commit -m \"что я сделал\"";
+    return 'Добавь сообщение: git commit -m "что я сделал"';
   }
   if (stderr.includes("nothing to commit")) {
     return "Нечего коммитить: измени файл и выполни git add.";
@@ -48,10 +48,11 @@ export function Terminal({
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: прокручиваем лог при появлении новых записей
   useEffect(() => {
     const element = scrollRef.current;
     if (element) element.scrollTop = element.scrollHeight;
-  }, [entries, busy]);
+  }, [entries]);
 
   useEffect(() => {
     if (!draft) return;
@@ -153,9 +154,7 @@ export function Terminal({
                   {entry.stderr}
                 </pre>
               ) : null}
-              {hint ? (
-                <div className="mt-1 text-[11px] text-warning">Подсказка: {hint}</div>
-              ) : null}
+              {hint ? <div className="mt-1 text-[11px] text-warning">Подсказка: {hint}</div> : null}
             </div>
           );
         })}

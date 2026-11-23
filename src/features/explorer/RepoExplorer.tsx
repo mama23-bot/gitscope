@@ -11,7 +11,7 @@ import { filterCommits } from "@/lib/validators";
 import type { RepoInfo } from "@/types";
 import { CommitDetails } from "./CommitDetails";
 import { CommitList } from "./CommitList";
-import { Filters, type ExplorerFilters } from "./Filters";
+import { type ExplorerFilters, Filters } from "./Filters";
 
 export function RepoExplorer({ repo }: { repo: RepoInfo }) {
   const [filters, setFilters] = useState<ExplorerFilters>({
@@ -44,9 +44,7 @@ export function RepoExplorer({ repo }: { repo: RepoInfo }) {
 
   const branches = useMemo(
     () =>
-      refs
-        .filter((reference) => reference.kind === "branch")
-        .map((reference) => reference.name),
+      refs.filter((reference) => reference.kind === "branch").map((reference) => reference.name),
     [refs],
   );
 
@@ -90,12 +88,7 @@ export function RepoExplorer({ repo }: { repo: RepoInfo }) {
 
         <div className="h-4 w-px shrink-0 bg-line" />
 
-        <Filters
-          filters={filters}
-          authors={authors}
-          branches={branches}
-          onChange={setFilters}
-        />
+        <Filters filters={filters} authors={authors} branches={branches} onChange={setFilters} />
 
         <div className="ml-auto flex shrink-0 items-center gap-2">
           {filtered.length !== commits.length ? (
@@ -108,9 +101,7 @@ export function RepoExplorer({ repo }: { repo: RepoInfo }) {
             variant="ghost"
             title="Обновить"
             icon={
-              <RefreshCw
-                className={cn("size-3.5", commitsQuery.isFetching && "animate-spin")}
-              />
+              <RefreshCw className={cn("size-3.5", commitsQuery.isFetching && "animate-spin")} />
             }
             onClick={refresh}
           />

@@ -1,5 +1,5 @@
-import { fileURLToPath, URL } from "node:url";
 import process from "node:process";
+import { fileURLToPath, URL } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";

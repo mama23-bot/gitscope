@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use crate::error::{AppError, AppResult};
 use crate::git::policy;
 use crate::git::repo::{self, RepoState};
-use crate::git::runner::{run_git, run_git_ok, run_git_with_env, GitEnv, WRITE_TIMEOUT};
+use crate::git::runner::{GitEnv, WRITE_TIMEOUT, run_git, run_git_ok, run_git_with_env};
 use crate::git::shell;
 
 fn a(items: &[&str]) -> Vec<String> {
@@ -136,12 +136,7 @@ fn remove_file(root: &Path, path: &str) -> AppResult<()> {
     Ok(())
 }
 
-fn commit_with_date(
-    env: &GitEnv,
-    root: &Path,
-    message: &str,
-    timestamp: i64,
-) -> AppResult<()> {
+fn commit_with_date(env: &GitEnv, root: &Path, message: &str, timestamp: i64) -> AppResult<()> {
     let date = format!("@{timestamp} +0000");
     let output = run_git_with_env(
         env,
@@ -164,12 +159,7 @@ fn commit_with_date(
     Ok(())
 }
 
-fn apply_commit(
-    env: &GitEnv,
-    root: &Path,
-    spec: &CommitSpec,
-    timestamp: i64,
-) -> AppResult<()> {
+fn apply_commit(env: &GitEnv, root: &Path, spec: &CommitSpec, timestamp: i64) -> AppResult<()> {
     for file in &spec.files {
         write_file(root, file)?;
     }
@@ -208,10 +198,7 @@ pub fn create(env: &GitEnv, root: &Path, spec: &SandboxSpec) -> AppResult<()> {
         ("user.name", "Ученик GitScope".to_string()),
         ("user.email", "learner@gitscope.local".to_string()),
         ("core.autocrlf", "false".to_string()),
-        (
-            "core.hooksPath",
-            hooks_dir.to_string_lossy().to_string(),
-        ),
+        ("core.hooksPath", hooks_dir.to_string_lossy().to_string()),
         ("commit.gpgsign", "false".to_string()),
         ("tag.gpgsign", "false".to_string()),
         ("advice.detachedHead", "false".to_string()),
@@ -364,16 +351,16 @@ impl ShellMode {
 
 fn split_redirect(tokens: &[String]) -> (Vec<String>, Redirect) {
     for (index, token) in tokens.iter().enumerate() {
-        if token == ">" || token == ">>" {
-            if let Some(target) = tokens.get(index + 1) {
-                let command = tokens[..index].to_vec();
-                let redirect = if token == ">" {
-                    Redirect::Truncate(target.clone())
-                } else {
-                    Redirect::Append(target.clone())
-                };
-                return (command, redirect);
-            }
+        if (token == ">" || token == ">>")
+            && let Some(target) = tokens.get(index + 1)
+        {
+            let command = tokens[..index].to_vec();
+            let redirect = if token == ">" {
+                Redirect::Truncate(target.clone())
+            } else {
+                Redirect::Append(target.clone())
+            };
+            return (command, redirect);
         }
     }
     (tokens.to_vec(), Redirect::None)
@@ -388,7 +375,9 @@ pub fn run_command(
 ) -> AppResult<CommandResult> {
     let tokens = tokenize(input)?;
     if tokens.is_empty() {
-        return Err(AppError::invalid("Введи команду, например: git status или ls"));
+        return Err(AppError::invalid(
+            "Введи команду, например: git status или ls",
+        ));
     }
 
     let (command_tokens, redirect) = split_redirect(&tokens);

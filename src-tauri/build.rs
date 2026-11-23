@@ -32,8 +32,6 @@ fn main() {
         }
     }
 
-    tauri_build::try_build(
-        tauri_build::Attributes::new().windows_attributes(windows_attributes),
-    )
-    .expect("failed to run tauri-build");
+    tauri_build::try_build(tauri_build::Attributes::new().windows_attributes(windows_attributes))
+        .expect("failed to run tauri-build");
 }

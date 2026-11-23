@@ -4,11 +4,11 @@ import { Link } from "react-router-dom";
 import { Badge, Button } from "@/components/ui";
 import { levelInfo } from "@/content/lessons";
 import type { Lesson, LessonStep } from "@/content/types";
-import { cn } from "@/lib/cn";
-import { ipc } from "@/lib/ipc";
 import { MiniGraph } from "@/features/playground/MiniGraph";
 import { Terminal } from "@/features/playground/Terminal";
 import { useSandbox } from "@/features/playground/useSandbox";
+import { cn } from "@/lib/cn";
+import { ipc } from "@/lib/ipc";
 
 type StepStatus = "done" | "current" | "todo";
 
@@ -33,9 +33,7 @@ function StepCard({
     <div
       className={cn(
         "rounded-lg border p-3 transition-colors",
-        isCurrent
-          ? "border-accent/40 bg-accent-soft/40"
-          : "border-line bg-canvas/40",
+        isCurrent ? "border-accent/40 bg-accent-soft/40" : "border-line bg-canvas/40",
       )}
     >
       <div className="flex items-start gap-2">
@@ -54,19 +52,14 @@ function StepCard({
 
         <div className="min-w-0 flex-1">
           <div
-            className={cn(
-              "text-xs font-medium",
-              status === "todo" ? "text-fg-muted" : "text-fg",
-            )}
+            className={cn("text-xs font-medium", status === "todo" ? "text-fg-muted" : "text-fg")}
           >
             {step.title}
           </div>
 
           {isCurrent ? (
             <>
-              <p className="mt-1 text-[11px] leading-relaxed text-fg-muted">
-                {step.description}
-              </p>
+              <p className="mt-1 text-[11px] leading-relaxed text-fg-muted">{step.description}</p>
 
               {step.commands && step.commands.length > 0 ? (
                 <div className="mt-2 flex flex-wrap gap-1">
@@ -152,7 +145,7 @@ export function LessonRunner({ lesson }: { lesson: Lesson }) {
     if (!result) return;
 
     const step = lesson.steps[stepIndex];
-    if (!step || !step.validate(result.state)) return;
+    if (!step?.validate(result.state)) return;
 
     const nextCompleted = [...completed, step.id];
     const nextIndex = stepIndex + 1;
@@ -231,9 +224,7 @@ export function LessonRunner({ lesson }: { lesson: Lesson }) {
                   key={step.id}
                   step={step}
                   index={index}
-                  status={
-                    index < stepIndex ? "done" : index === stepIndex ? "current" : "todo"
-                  }
+                  status={index < stepIndex ? "done" : index === stepIndex ? "current" : "todo"}
                   showHint={showHint && index === stepIndex}
                   onToggleHint={() => setShowHint((value) => !value)}
                   onUseCommand={setDraft}
@@ -248,8 +239,8 @@ export function LessonRunner({ lesson }: { lesson: Lesson }) {
                   Урок пройден
                 </div>
                 <p className="mt-1 text-xs leading-relaxed text-fg-muted">
-                  Ты создал ветку, закоммитил изменение, влил его через merge-коммит
-                  и удалил ветку. Это базовый рабочий цикл Git.
+                  Ты создал ветку, закоммитил изменение, влил его через merge-коммит и удалил ветку.
+                  Это базовый рабочий цикл Git.
                 </p>
                 <div className="mt-3 flex gap-2">
                   <Link to="/learn">

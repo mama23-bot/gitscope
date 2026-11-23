@@ -22,7 +22,7 @@ export function DiffViewer({
   const [renderError, setRenderError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!patch || !patch.trim()) {
+    if (!patch?.trim()) {
       setRendered("");
       setRendering(false);
       setRenderError(null);
@@ -90,7 +90,7 @@ export function DiffViewer({
     );
   }
 
-  if (!patch || !patch.trim()) {
+  if (!patch?.trim()) {
     return (
       <EmptyState
         icon={<FileDiff className="size-5" />}
@@ -107,6 +107,7 @@ export function DiffViewer({
           Diff обрезан: коммит слишком большой.
         </div>
       ) : null}
+      {/* biome-ignore lint/security/noDangerouslySetInnerHtml: diff2html экранирует содержимое patch */}
       <div dangerouslySetInnerHTML={{ __html: rendered }} />
     </div>
   );

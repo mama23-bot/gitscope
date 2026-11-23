@@ -26,9 +26,7 @@ export function Filters({
         <Search className="pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-fg-faint" />
         <input
           value={filters.search}
-          onChange={(event) =>
-            onChange({ ...filters, search: event.target.value })
-          }
+          onChange={(event) => onChange({ ...filters, search: event.target.value })}
           placeholder="Сообщение, автор или хеш"
           className="h-7 w-56 rounded-md border border-line bg-canvas pl-7 pr-2 text-xs text-fg placeholder:text-fg-faint focus:border-accent/60 focus:outline-none"
         />
