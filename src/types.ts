@@ -167,6 +167,12 @@ export interface AppInfo {
 
 export type ShellMode = "safe" | "full";
 
+export interface TerminalIntegrationStatus {
+  installed: boolean;
+  bashAvailable: boolean;
+  profiles: string[];
+}
+
 export interface FileSpec {
   path: string;
   content: string;

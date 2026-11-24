@@ -1,5 +1,6 @@
 pub mod error;
 pub mod git;
+pub mod terminal;
 
 #[cfg(feature = "desktop")]
 mod commands;
@@ -65,6 +66,9 @@ pub fn run() {
             commands::save_progress,
             commands::get_settings,
             commands::set_setting,
+            commands::terminal_integration_status,
+            commands::terminal_integration_enable,
+            commands::terminal_integration_disable,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

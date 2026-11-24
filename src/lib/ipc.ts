@@ -14,6 +14,7 @@ import type {
   SandboxInfo,
   SandboxSpec,
   ShellMode,
+  TerminalIntegrationStatus,
 } from "@/types";
 import { mockIpc } from "./mock-ipc";
 
@@ -51,6 +52,11 @@ const realIpc = {
 
   getSettings: () => invoke<Record<string, string>>("get_settings"),
   setSetting: (key: string, value: string) => invoke<void>("set_setting", { key, value }),
+
+  terminalIntegrationStatus: () => invoke<TerminalIntegrationStatus>("terminal_integration_status"),
+  terminalIntegrationEnable: () => invoke<TerminalIntegrationStatus>("terminal_integration_enable"),
+  terminalIntegrationDisable: () =>
+    invoke<TerminalIntegrationStatus>("terminal_integration_disable"),
 };
 
 const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;

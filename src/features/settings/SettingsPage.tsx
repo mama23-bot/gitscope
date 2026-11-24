@@ -1,9 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
-import { FolderOpen, GitBranch, Info, ShieldCheck } from "lucide-react";
-import type { ReactNode } from "react";
+import { FolderOpen, GitBranch, Info, ShieldCheck, Terminal } from "lucide-react";
+import { type ReactNode, useState } from "react";
 import { Button, Spinner } from "@/components/ui";
-import { ipc } from "@/lib/ipc";
+import { errorMessage, ipc } from "@/lib/ipc";
 
 function Card({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
   return (
@@ -27,7 +27,29 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 export function SettingsPage() {
+  const queryClient = useQueryClient();
   const info = useQuery({ queryKey: ["appInfo"], queryFn: ipc.appInfo });
+  const integration = useQuery({
+    queryKey: ["terminalIntegration"],
+    queryFn: ipc.terminalIntegrationStatus,
+  });
+  const [integrationBusy, setIntegrationBusy] = useState(false);
+  const [integrationError, setIntegrationError] = useState<string | null>(null);
+
+  const toggleIntegration = async (enable: boolean) => {
+    setIntegrationBusy(true);
+    setIntegrationError(null);
+    try {
+      const next = enable
+        ? await ipc.terminalIntegrationEnable()
+        : await ipc.terminalIntegrationDisable();
+      queryClient.setQueryData(["terminalIntegration"], next);
+    } catch (cause) {
+      setIntegrationError(errorMessage(cause));
+    } finally {
+      setIntegrationBusy(false);
+    }
+  };
 
   return (
     <div className="h-full overflow-y-auto">
@@ -58,6 +80,50 @@ export function SettingsPage() {
                 GitScope использует системный git. Если команда не найдена, установи Git for Windows
                 и перезапусти приложение.
               </p>
+            </Card>
+
+            <Card icon={<Terminal className="size-4" />} title="Интеграция с системой">
+              <Row
+                label="Команда cmd"
+                value={integration.data?.installed ? "открывает Git Bash" : "не настроена"}
+              />
+              <p className="text-[11px] leading-relaxed text-fg-faint">
+                GitScope может добавить функцию <span className="mono">cmd</span> в профиль
+                PowerShell — тогда команда cmd будет открывать Git Bash. Системный cmd.exe не
+                изменяется, изменение обратимо.
+              </p>
+              {integrationError ? (
+                <p className="text-[11px] text-danger">{integrationError}</p>
+              ) : null}
+              <div className="pt-1">
+                {integration.data?.installed ? (
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    onClick={() => toggleIntegration(false)}
+                    disabled={integrationBusy}
+                  >
+                    {integrationBusy ? "Убираю…" : "Убрать команду cmd"}
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    onClick={() => toggleIntegration(true)}
+                    disabled={integrationBusy || integration.data?.bashAvailable === false}
+                  >
+                    {integrationBusy ? "Добавляю…" : "Добавить команду cmd"}
+                  </Button>
+                )}
+              </div>
+              {integration.data?.profiles.length ? (
+                <div className="space-y-1">
+                  {integration.data.profiles.map((profile) => (
+                    <div key={profile} className="mono break-all text-[10px] text-fg-faint">
+                      {profile}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
             </Card>
 
             <Card icon={<FolderOpen className="size-4" />} title="Данные">

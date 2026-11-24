@@ -14,6 +14,7 @@ import type {
   SandboxInfo,
   SandboxSpec,
   ShellMode,
+  TerminalIntegrationStatus,
 } from "@/types";
 
 const now = Math.floor(Date.now() / 1000);
@@ -292,6 +293,15 @@ const sandboxState: RepoState = {
 };
 
 const progressKey = "gitscope:mock-progress";
+const integrationKey = "gitscope:mock-integration";
+
+function mockIntegration(): TerminalIntegrationStatus {
+  return {
+    installed: localStorage.getItem(integrationKey) === "true",
+    bashAvailable: true,
+    profiles: ["C:\\Users\\demo\\Documents\\WindowsPowerShell\\Microsoft.PowerShell_profile.ps1"],
+  };
+}
 
 function readProgress(): LessonProgress[] {
   try {
@@ -383,4 +393,14 @@ export const mockIpc = {
 
   getSettings: async (): Promise<Record<string, string>> => ({}),
   setSetting: async () => {},
+
+  terminalIntegrationStatus: async (): Promise<TerminalIntegrationStatus> => mockIntegration(),
+  terminalIntegrationEnable: async (): Promise<TerminalIntegrationStatus> => {
+    localStorage.setItem(integrationKey, "true");
+    return mockIntegration();
+  },
+  terminalIntegrationDisable: async (): Promise<TerminalIntegrationStatus> => {
+    localStorage.removeItem(integrationKey);
+    return mockIntegration();
+  },
 };

@@ -1,12 +1,13 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { TerminalSquare } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { ipc } from "@/lib/ipc";
-import type { SandboxSpec, ShellMode } from "@/types";
+import type { SandboxSpec, ShellMode, TerminalIntegrationStatus } from "@/types";
 import { MiniGraph } from "./MiniGraph";
 import { Terminal } from "./Terminal";
+import { TerminalIntegrationDialog } from "./TerminalIntegrationDialog";
 import { useSandbox } from "./useSandbox";
 
 const playgroundSpec: SandboxSpec = {
@@ -36,18 +37,51 @@ const playgroundSpec: SandboxSpec = {
 };
 
 export function PlaygroundPage() {
+  const queryClient = useQueryClient();
   const [mode, setMode] = useState<ShellMode>("full");
   const [draft, setDraft] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const prompted = useRef(false);
   const sandbox = useSandbox("playground", playgroundSpec, mode);
 
   const appInfo = useQuery({ queryKey: ["appInfo"], queryFn: ipc.appInfo });
   const bashAvailable = appInfo.data?.bashAvailable ?? true;
+
+  const settings = useQuery({ queryKey: ["settings"], queryFn: ipc.getSettings });
+  const integration = useQuery({
+    queryKey: ["terminalIntegration"],
+    queryFn: ipc.terminalIntegrationStatus,
+  });
 
   useEffect(() => {
     if (appInfo.data?.bashAvailable === false) {
       setMode("safe");
     }
   }, [appInfo.data]);
+
+  useEffect(() => {
+    if (mode !== "full" || prompted.current) return;
+    if (!settings.data || !integration.data) return;
+
+    const seen = settings.data["terminal.integration.promptSeen"] === "true";
+    if (!seen && !integration.data.installed) {
+      prompted.current = true;
+      setDialogOpen(true);
+    }
+  }, [mode, settings.data, integration.data]);
+
+  const closeDialog = async () => {
+    setDialogOpen(false);
+    await ipc.setSetting("terminal.integration.promptSeen", "true");
+    await settings.refetch();
+  };
+
+  const enableIntegration = async (next: TerminalIntegrationStatus) => {
+    setDialogOpen(false);
+    await ipc.setSetting("terminal.integration.promptSeen", "true");
+    queryClient.setQueryData(["terminalIntegration"], next);
+    await settings.refetch();
+  };
 
   return (
     <div className="flex h-full flex-col">
@@ -148,6 +182,13 @@ export function PlaygroundPage() {
           </div>
         </div>
       </div>
+
+      <TerminalIntegrationDialog
+        open={dialogOpen}
+        status={integration.data ?? null}
+        onClose={closeDialog}
+        onEnabled={enableIntegration}
+      />
     </div>
   );
 }
