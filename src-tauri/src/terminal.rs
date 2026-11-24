@@ -35,7 +35,7 @@ fn profiles() -> Vec<PathBuf> {
 fn block(bash: &Path) -> String {
     let bash = bash.to_string_lossy().replace('\'', "''");
     format!(
-        "{START_MARKER}\n# Добавлено GitScope. Отключить: Настройки → Интеграция с системой.\nfunction cmd {{\n    & '{bash}' --login -i\n}}\n{END_MARKER}\n"
+        "{START_MARKER}\n# Added by GitScope. Disable in Settings -> System integration.\nfunction cmd {{\n    & '{bash}' --login -i\n}}\n{END_MARKER}\n"
     )
 }
 
