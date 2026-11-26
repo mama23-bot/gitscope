@@ -15,6 +15,7 @@ import type {
   SandboxSpec,
   ShellMode,
   TerminalIntegrationStatus,
+  WindowsIntegrationStatus,
 } from "@/types";
 import { mockIpc } from "./mock-ipc";
 
@@ -57,6 +58,10 @@ const realIpc = {
   terminalIntegrationEnable: () => invoke<TerminalIntegrationStatus>("terminal_integration_enable"),
   terminalIntegrationDisable: () =>
     invoke<TerminalIntegrationStatus>("terminal_integration_disable"),
+
+  windowsIntegrationStatus: () => invoke<WindowsIntegrationStatus>("windows_integration_status"),
+  windowsIntegrationEnable: () => invoke<WindowsIntegrationStatus>("windows_integration_enable"),
+  windowsIntegrationDisable: () => invoke<WindowsIntegrationStatus>("windows_integration_disable"),
 };
 
 const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;

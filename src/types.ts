@@ -173,6 +173,12 @@ export interface TerminalIntegrationStatus {
   profiles: string[];
 }
 
+export interface WindowsIntegrationStatus {
+  shortcutInstalled: boolean;
+  appPathsInstalled: boolean;
+  bashAvailable: boolean;
+}
+
 export interface FileSpec {
   path: string;
   content: string;

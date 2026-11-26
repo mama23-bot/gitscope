@@ -14,7 +14,7 @@ use crate::git::repo::{
 use crate::git::runner::{self, GitEnv};
 use crate::git::sandbox::{self, CommandResult, SandboxSpec};
 use crate::git::shell;
-use crate::terminal::{self, TerminalIntegrationStatus};
+use crate::terminal::{self, TerminalIntegrationStatus, WindowsIntegrationStatus};
 
 pub struct AppState {
     pub db: Mutex<Connection>,
@@ -312,4 +312,19 @@ pub async fn terminal_integration_enable() -> AppResult<TerminalIntegrationStatu
 #[tauri::command]
 pub async fn terminal_integration_disable() -> AppResult<TerminalIntegrationStatus> {
     terminal::disable()
+}
+
+#[tauri::command]
+pub async fn windows_integration_status() -> AppResult<WindowsIntegrationStatus> {
+    Ok(terminal::windows_status())
+}
+
+#[tauri::command]
+pub async fn windows_integration_enable() -> AppResult<WindowsIntegrationStatus> {
+    terminal::windows_enable()
+}
+
+#[tauri::command]
+pub async fn windows_integration_disable() -> AppResult<WindowsIntegrationStatus> {
+    terminal::windows_disable()
 }

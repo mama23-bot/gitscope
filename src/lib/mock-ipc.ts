@@ -15,6 +15,7 @@ import type {
   SandboxSpec,
   ShellMode,
   TerminalIntegrationStatus,
+  WindowsIntegrationStatus,
 } from "@/types";
 
 const now = Math.floor(Date.now() / 1000);
@@ -294,12 +295,21 @@ const sandboxState: RepoState = {
 
 const progressKey = "gitscope:mock-progress";
 const integrationKey = "gitscope:mock-integration";
+const windowsKey = "gitscope:mock-windows-integration";
 
 function mockIntegration(): TerminalIntegrationStatus {
   return {
     installed: localStorage.getItem(integrationKey) === "true",
     bashAvailable: true,
     profiles: ["C:\\Users\\demo\\Documents\\WindowsPowerShell\\Microsoft.PowerShell_profile.ps1"],
+  };
+}
+
+function mockWindowsIntegration(): WindowsIntegrationStatus {
+  return {
+    shortcutInstalled: localStorage.getItem(windowsKey) === "true",
+    appPathsInstalled: localStorage.getItem(windowsKey) === "true",
+    bashAvailable: true,
   };
 }
 
@@ -402,5 +412,15 @@ export const mockIpc = {
   terminalIntegrationDisable: async (): Promise<TerminalIntegrationStatus> => {
     localStorage.removeItem(integrationKey);
     return mockIntegration();
+  },
+
+  windowsIntegrationStatus: async (): Promise<WindowsIntegrationStatus> => mockWindowsIntegration(),
+  windowsIntegrationEnable: async (): Promise<WindowsIntegrationStatus> => {
+    localStorage.setItem(windowsKey, "true");
+    return mockWindowsIntegration();
+  },
+  windowsIntegrationDisable: async (): Promise<WindowsIntegrationStatus> => {
+    localStorage.removeItem(windowsKey);
+    return mockWindowsIntegration();
   },
 };

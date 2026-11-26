@@ -69,6 +69,9 @@ pub fn run() {
             commands::terminal_integration_status,
             commands::terminal_integration_enable,
             commands::terminal_integration_disable,
+            commands::windows_integration_status,
+            commands::windows_integration_enable,
+            commands::windows_integration_disable,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

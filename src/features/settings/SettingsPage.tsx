@@ -33,17 +33,26 @@ export function SettingsPage() {
     queryKey: ["terminalIntegration"],
     queryFn: ipc.terminalIntegrationStatus,
   });
+  const windows = useQuery({
+    queryKey: ["windowsIntegration"],
+    queryFn: ipc.windowsIntegrationStatus,
+  });
   const [integrationBusy, setIntegrationBusy] = useState(false);
   const [integrationError, setIntegrationError] = useState<string | null>(null);
+
+  const applied = Boolean(windows.data?.shortcutInstalled || integration.data?.installed);
 
   const toggleIntegration = async (enable: boolean) => {
     setIntegrationBusy(true);
     setIntegrationError(null);
     try {
-      const next = enable
-        ? await ipc.terminalIntegrationEnable()
-        : await ipc.terminalIntegrationDisable();
-      queryClient.setQueryData(["terminalIntegration"], next);
+      if (enable) {
+        queryClient.setQueryData(["windowsIntegration"], await ipc.windowsIntegrationEnable());
+        queryClient.setQueryData(["terminalIntegration"], await ipc.terminalIntegrationEnable());
+      } else {
+        queryClient.setQueryData(["windowsIntegration"], await ipc.windowsIntegrationDisable());
+        queryClient.setQueryData(["terminalIntegration"], await ipc.terminalIntegrationDisable());
+      }
     } catch (cause) {
       setIntegrationError(errorMessage(cause));
     } finally {
@@ -84,34 +93,44 @@ export function SettingsPage() {
 
             <Card icon={<Terminal className="size-4" />} title="Интеграция с системой">
               <Row
-                label="Команда cmd"
-                value={integration.data?.installed ? "открывает Git Bash" : "не настроена"}
+                label="Ярлык Linux Terminal"
+                value={
+                  windows.data?.shortcutInstalled ? "на рабочем столе и в «Пуск»" : "не создан"
+                }
+              />
+              <Row
+                label="Win+R → cmd"
+                value={windows.data?.appPathsInstalled ? "Git Bash" : "cmd.exe"}
+              />
+              <Row
+                label="cmd в PowerShell"
+                value={integration.data?.installed ? "Git Bash" : "cmd.exe"}
               />
               <p className="text-[11px] leading-relaxed text-fg-faint">
-                GitScope может добавить функцию <span className="mono">cmd</span> в профиль
-                PowerShell — тогда команда cmd будет открывать Git Bash. Системный cmd.exe не
-                изменяется, изменение обратимо.
+                GitScope создаёт ярлык «Linux Terminal» и настраивает команду cmd в окне «Выполнить»
+                (Win+R) и в PowerShell. Системный файл cmd.exe не изменяется, поэтому скрипты
+                Windows и установщики работают как обычно. Всё обратимо.
               </p>
               {integrationError ? (
                 <p className="text-[11px] text-danger">{integrationError}</p>
               ) : null}
               <div className="pt-1">
-                {integration.data?.installed ? (
+                {applied ? (
                   <Button
                     size="sm"
                     variant="danger"
                     onClick={() => toggleIntegration(false)}
                     disabled={integrationBusy}
                   >
-                    {integrationBusy ? "Убираю…" : "Убрать команду cmd"}
+                    {integrationBusy ? "Возвращаю…" : "Вернуть cmd.exe"}
                   </Button>
                 ) : (
                   <Button
                     size="sm"
                     onClick={() => toggleIntegration(true)}
-                    disabled={integrationBusy || integration.data?.bashAvailable === false}
+                    disabled={integrationBusy || windows.data?.bashAvailable === false}
                   >
-                    {integrationBusy ? "Добавляю…" : "Добавить команду cmd"}
+                    {integrationBusy ? "Настраиваю…" : "Заменить терминал на Git Bash"}
                   </Button>
                 )}
               </div>

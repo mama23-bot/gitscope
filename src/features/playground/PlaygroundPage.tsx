@@ -4,7 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { ipc } from "@/lib/ipc";
-import type { SandboxSpec, ShellMode, TerminalIntegrationStatus } from "@/types";
+import type {
+  SandboxSpec,
+  ShellMode,
+  TerminalIntegrationStatus,
+  WindowsIntegrationStatus,
+} from "@/types";
 import { MiniGraph } from "./MiniGraph";
 import { Terminal } from "./Terminal";
 import { TerminalIntegrationDialog } from "./TerminalIntegrationDialog";
@@ -52,6 +57,10 @@ export function PlaygroundPage() {
     queryKey: ["terminalIntegration"],
     queryFn: ipc.terminalIntegrationStatus,
   });
+  const windows = useQuery({
+    queryKey: ["windowsIntegration"],
+    queryFn: ipc.windowsIntegrationStatus,
+  });
 
   useEffect(() => {
     if (appInfo.data?.bashAvailable === false) {
@@ -61,14 +70,15 @@ export function PlaygroundPage() {
 
   useEffect(() => {
     if (mode !== "full" || prompted.current) return;
-    if (!settings.data || !integration.data) return;
+    if (!settings.data || !integration.data || !windows.data) return;
 
     const seen = settings.data["terminal.integration.promptSeen"] === "true";
-    if (!seen && !integration.data.installed) {
+    const installed = windows.data.shortcutInstalled || integration.data.installed;
+    if (!seen && !installed) {
       prompted.current = true;
       setDialogOpen(true);
     }
-  }, [mode, settings.data, integration.data]);
+  }, [mode, settings.data, integration.data, windows.data]);
 
   const closeDialog = async () => {
     setDialogOpen(false);
@@ -76,10 +86,14 @@ export function PlaygroundPage() {
     await settings.refetch();
   };
 
-  const enableIntegration = async (next: TerminalIntegrationStatus) => {
+  const enableIntegration = async (
+    nextWindows: WindowsIntegrationStatus,
+    nextPowershell: TerminalIntegrationStatus,
+  ) => {
     setDialogOpen(false);
     await ipc.setSetting("terminal.integration.promptSeen", "true");
-    queryClient.setQueryData(["terminalIntegration"], next);
+    queryClient.setQueryData(["windowsIntegration"], nextWindows);
+    queryClient.setQueryData(["terminalIntegration"], nextPowershell);
     await settings.refetch();
   };
 
