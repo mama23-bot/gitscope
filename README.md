@@ -2,6 +2,12 @@
 
 **Explore your Git history. Understand every commit. Master Git visually.**
 
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-lightgrey.svg)]()
+[![Built with Tauri](https://img.shields.io/badge/built%20with-Tauri%202-orange.svg)](https://tauri.app)
+
+[**Скачать установщик**](https://github.com/mama23-bot/gitscope/releases/latest) · Windows 10/11
+
 Локальное desktop-приложение: визуальный исследователь Git-истории и интерактивный
 учебник Git в одном окне. Работает полностью офлайн, без телеметрии и платных API.
 
