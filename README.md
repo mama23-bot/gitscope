@@ -77,6 +77,7 @@
 - **Rust** (stable) и Cargo
 - **Git** в `PATH`
 - **WebView2** (в Windows 10/11 уже установлен)
+- **Git for Windows** — для Linux-терминала (Git Bash)
 - Для сборки: MSVC Build Tools **или** MinGW-w64 (см. ниже)
 
 ---
@@ -90,9 +91,9 @@ npm install
 npm run tauri dev
 ```
 
-### Этот компьютер (GNU-тулчейн)
+### Сборка без MSVC (GNU-тулчейн)
 
-В окружении без MSVC Build Tools используется GNU-тулчейн, а линкером
+Если MSVC Build Tools не установлены, используется GNU-тулчейн, а линкером
 выступает `rust-lld`.
 
 ```powershell
@@ -241,3 +242,9 @@ src-tauri/
 - **M4 — Challenges:** задания без подсказок и режим Recovery.
 - **M5 — Compare и Search:** сравнение любых коммитов, поиск по diff.
 - **M6 — Полировка:** инсталлятор, иконки, автообновление, достижения.
+
+---
+
+## Лицензия
+
+[MIT](LICENSE). Используй, изменяй и распространяй свободно.
